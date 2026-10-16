@@ -1,7 +1,7 @@
 //! Fixed Windows operations only. No webview-provided shell commands.
 use std::sync::atomic::{AtomicBool, Ordering};
 
-static VOICE_BUSY: AtomicBool = AtomicBool::new(false);
+pub(crate) static VOICE_BUSY: AtomicBool = AtomicBool::new(false);
 static VOICE_CANCEL: AtomicBool = AtomicBool::new(false);
 
 /// OS notification availability; no screen capture or window-title inspection.
@@ -96,7 +96,8 @@ pub async fn nova_voice_listen(shared: tauri::State<'_, crate::Shared>) -> Resul
             struct Reset;
             impl Drop for Reset { fn drop(&mut self) { VOICE_BUSY.store(false, Ordering::SeqCst); } }
             let _reset = Reset;
-            run_script(include_str!("nova_voice.ps1"), None, Some(&VOICE_CANCEL))
+            let text = run_script(include_str!("nova_voice.ps1"), None, Some(&VOICE_CANCEL))?;
+            crate::notebook::correct(&text)
         }).await.map_err(|e| e.to_string())?
     }
     #[cfg(not(windows))]

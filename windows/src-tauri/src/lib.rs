@@ -18,6 +18,8 @@ mod local_chat;
 mod log;
 mod net;
 mod nova_doctor;
+mod notebook;
+mod flow_text;
 mod nova_windows;
 mod openai_compat;
 mod phone_link;
@@ -113,7 +115,7 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
         (screen_changed, autostart_changed, shortcuts_changed)
     };
     let settings = shared.settings.lock().unwrap().clone();
-    if !settings.nova_allow_microphone { nova_windows::nova_voice_stop(); }
+    if !settings.nova_allow_microphone { nova_windows::nova_voice_stop(); notebook::notebook_stop(); }
     if let Err(err) = settings::save(&settings) {
         log::line(format!("could not save settings: {err}"));
     }
@@ -667,6 +669,7 @@ pub fn run() {
             match shortcuts::from_args(&argv) {
                 Some(action) => shortcuts::dispatch(app, action),
                 None => {
+                    if argv.iter().any(|arg| arg == "--notebook") { let _ = notebook::notebook_open(app.clone()); return; }
                     let _ = app.emit_to(island::WINDOW_LABEL, "tray", "open".to_string());
                 }
             }
@@ -689,6 +692,15 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             nova_doctor::nova_system_snapshot,
             nova_windows::nova_attention_state,
+            notebook::notebook_open,
+            notebook::notebook_read,
+            notebook::notebook_dictionary,
+            notebook::notebook_preview,
+            notebook::notebook_save,
+            notebook::notebook_delete,
+            notebook::notebook_summary,
+            notebook::notebook_start,
+            notebook::notebook_stop,
             nova_windows::nova_voice_listen,
             nova_windows::nova_voice_stop,
             nova_windows::nova_open_program,
@@ -804,6 +816,8 @@ pub fn run() {
             tray::build(&handle)?;
             // Before the island: see create_settings_window.
             create_settings_window(&handle);
+            notebook::create_window(&handle);
+            if std::env::args().any(|arg| arg == "--notebook") { let _ = notebook::notebook_open(handle.clone()); }
             // Same rule for Mochi's desktop window.
             desktop::setup(&handle);
 
@@ -845,6 +859,7 @@ pub fn run() {
             // Withdraw the phone link's announcement on the local network before the process ends.
             if let tauri::RunEvent::Exit = event {
                 phone_link::stop_on_exit(app);
+                notebook::notebook_stop();
             }
         });
 }

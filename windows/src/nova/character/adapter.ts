@@ -54,9 +54,11 @@ export class NovaCharacter extends BotEngine {
     ctx.translate(-width / 2, -height / 2);
     const serviceDrawn = this.serviceId && drawServiceSprite(ctx, this.serviceId, width, height);
     const playDrawn = this.activity && drawPlaySprite(ctx, this.activity, playTime, width, height, this.outfit);
-    const holidayDrawn = !serviceDrawn && !playDrawn && index === 0 && drawHolidaySprite(ctx, this.outfit, width, height, this.peeking);
+    // Ledge expressions share one registered body; keep its accessories attached
+    // rather than swapping to a differently cropped holiday bust on idle.
+    const holidayDrawn = !this.peeking && !serviceDrawn && !playDrawn && drawHolidaySprite(ctx, this.outfit, width, height, false);
     if (!serviceDrawn && !playDrawn && !holidayDrawn) drawSprite(ctx, index, width, height, this.peeking, this.open < 0.55);
-    if (!this.isMini && !serviceDrawn && !holidayDrawn && !(playDrawn && this.outfit === "witchHat")) drawAccessory(ctx, this.outfit, width, height, this.peeking);
+    if (!this.isMini && !serviceDrawn && !holidayDrawn && !(playDrawn && this.outfit === "witchHat")) drawAccessory(ctx, this.outfit, width, height, this.peeking, index);
     ctx.restore();
     if (this.activity === "football") drawFootball(ctx, width, height, playTime);
     ctx.restore();

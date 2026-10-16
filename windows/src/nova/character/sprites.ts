@@ -19,6 +19,20 @@ export function characterBox(width: number, height: number, bounds = STATE_BOUND
   return { x: (width - w) / 2, y: height * .94 - h, w, h };
 }
 
+/** Accessories use the exact same crop and scale as the illustrated pose. */
+export function accessoryBox(width: number, height: number, bust: boolean, index = 0) {
+  if (!bust) return characterBox(width, height, STATE_BOUNDS[index] ?? STATE_BOUNDS[0]);
+  if (ledgeSheet?.naturalWidth) {
+    const cellW = ledgeSheet.naturalWidth / 5;
+    const sourceHeight = ledgeSheet.naturalHeight * .80;
+    const w = Math.min(width * .92, height * cellW / sourceHeight);
+    const drawnHeight = w * sourceHeight / cellW;
+    return { x: (width - w) / 2, y: height - drawnHeight + drawnHeight * .05, w, h: drawnHeight * 1.2 };
+  }
+  const w = Math.min(width * .92, height / .63);
+  return { x: (width - w) / 2, y: (height - w * .63) / 2, w, h: w };
+}
+
 export async function loadExtraCharacters(): Promise<void> {
   await Promise.all([
     ["/nova/kiro-football-emotions.png", (img: HTMLImageElement) => { footballSheet = img; }],

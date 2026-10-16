@@ -22,6 +22,7 @@ export default defineConfig({
       input: {
         island: resolve(__dirname, "index.html"),
         settings: resolve(__dirname, "settings.html"),
+        notebook: resolve(__dirname, "notebook.html"),
         mochi: resolve(__dirname, "mochi.html"),
       },
     },

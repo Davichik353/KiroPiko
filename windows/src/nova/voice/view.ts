@@ -82,6 +82,7 @@ export function buildNovaTools(actions: ViewActions): ViewHost {
   const body = h("div", { class: "kiro-toolbox" },
     h("div", { class: "kiro-tool-grid" },
       screenError,
+      h("button", { class: "kiro-tool-link", onclick: () => Bridge.openNotebook() }, h("span", {}, h("strong", { text: "Заметки и диктовка" }), h("small", { text: "Словарь, расшифровки и итоги встреч" })), h("span", { "aria-hidden": "true", text: "↗" })),
       shortcut("AI-помощник", "Вопросы, файлы и ошибки", "prompt"),
       shortcut("Музыка", "Трек и управление плеером", "music"),
       shortcut("История", "Задачи и уведомления", "history"),

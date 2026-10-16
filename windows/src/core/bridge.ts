@@ -16,6 +16,7 @@ export const IS_TAURI =
 
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T | null> {
   if (!IS_TAURI) {
+    if (cmd === "notebook_open") { window.location.assign("/notebook.html"); return null; }
     if (cmd === "open_settings_window") window.location.assign("/settings.html");
     else if (cmd === "save_settings") savePreviewSettings(args?.settings as Settings);
     else if (cmd === "open_url" && typeof args?.url === "string") {
@@ -199,6 +200,7 @@ export const Bridge = {
   attentionState: () => call<number>("nova_attention_state"),
   systemSnapshot: () => callOrThrow<DoctorSnapshot>("nova_system_snapshot"),
   exportDoctorReport: (report: string) => callOrThrow<string>("nova_export_doctor_report", { report }),
+  openNotebook: () => call<void>("notebook_open"),
   voiceListen: () => callOrThrow<string>("nova_voice_listen"),
   voiceStop: () => callOrThrow<void>("nova_voice_stop"),
   musicControl: (action: "playPause" | "previous" | "next" | "volumeUp" | "volumeDown" | "mute") => callOrThrow<void>("nova_music_control", { action }),
