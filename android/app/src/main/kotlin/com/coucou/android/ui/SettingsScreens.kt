@@ -214,6 +214,7 @@ fun SettingsScreen(model: AppModel, onHistory: () -> Unit, onGallery: () -> Unit
             }
         }
 
+        item { WidgetInstallPanel() }
         item { SectionHeading(stringResource(R.string.settings_section_more)) }
         item {
             Panel {

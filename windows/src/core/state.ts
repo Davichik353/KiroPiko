@@ -60,6 +60,7 @@ export interface AskedQuestion {
 }
 
 export interface ChatMessage {
+  modelLabel?: string;
   id: number;
   role: "user" | "assistant";
   content: string;
@@ -130,6 +131,7 @@ export interface Settings {
   showCodexPlanInNotch: boolean;
   /** Who the chat talks to (see core/providers.ts); picked in the chat view. */
   chatProvider: ProviderId;
+  chatAutoModel: boolean;
   /** The model picked for each provider other than Anthropic, by provider id. */
   chatModels: Record<string, string>;
   /** Model server addresses once connected; empty means not connected. */
@@ -198,6 +200,7 @@ export const DEFAULT_SETTINGS: Settings = {
   planRelayInstalled: false,
   showCodexPlanInNotch: false,
   chatProvider: "anthropic",
+  chatAutoModel: false,
   chatModels: {},
   ollamaUrl: "",
   lmstudioUrl: "",
@@ -250,6 +253,7 @@ class AppState {
   novaPhrase = "";
   novaMusicPlaying = false;
   pendingApproval: ApprovalInfo | null = null;
+  pendingApprovalAt = 0;
   /** The pill that was in front when the card came up; it comes back after. */
   focusBeforeApproval: string | null = null;
 
@@ -331,6 +335,7 @@ class AppState {
    * the pill that was there is remembered (HookServer.focusBeforeApproval).
    */
   beginApproval(info: ApprovalInfo) {
+    if (this.pendingApproval?.requestId !== info.requestId) this.pendingApprovalAt = Date.now();
     this.pendingApproval = info;
     this.isPinned = true;
     if (this.focusBeforeApproval == null) this.focusBeforeApproval = this.focusId;

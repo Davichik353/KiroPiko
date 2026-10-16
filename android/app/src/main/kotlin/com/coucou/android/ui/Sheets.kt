@@ -153,6 +153,7 @@ fun ApprovalSheet(model: AppModel, r: ApprovalRequest, onAllow: (ApprovalRequest
                     Text(r.command, style = TypeScale.MONO.style(white).copy(fontFamily = FontFamily.Monospace))
                 }
             }
+            Text(com.coucou.android.core.ActionExplanation.describeRequest(r, androidx.compose.ui.platform.LocalConfiguration.current.locales[0].language == "ru"), Modifier.padding(top = 8.dp), style = TypeScale.SECONDARY.style(dim))
             Box(Modifier.size(8.dp))
         }
         val canAllow = ApprovalSheetPlan.canAllowHere(r)

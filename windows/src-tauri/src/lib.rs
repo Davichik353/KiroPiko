@@ -471,8 +471,9 @@ async fn chat_send(
     chat: State<'_, Chat>,
     query: String,
     context: Option<ChatContext>,
+    model_override: Option<String>,
 ) -> Result<ChatReply, String> {
-    let settings = shared.settings.lock().unwrap().clone();
+    let settings = chat::auto_settings(&shared.settings.lock().unwrap().clone(), model_override)?;
     chat::send(&app, &chat, &settings, query, context).await
 }
 

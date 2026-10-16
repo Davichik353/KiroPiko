@@ -637,6 +637,7 @@ class AppModel(private val context: Context) : LinkListener {
     }
 
     private fun removeApproval(fingerprint: String) {
+        notifier.cancelReminder(fingerprint)
         expiry.remove(fingerprint)?.let { main.removeCallbacks(it) }
         approvals = approvals.filter { it.fingerprint != fingerprint }
         notifier.cancelApproval(fingerprint)
@@ -739,6 +740,17 @@ class AppModel(private val context: Context) : LinkListener {
         }
     }
 
+    private val remindedDecisions = linkedSetOf<String>()
+    private fun scheduleDecisionReminder(fingerprint: String) {
+        if (!remindedDecisions.add(fingerprint)) return
+        if (remindedDecisions.size > 200) remindedDecisions.remove(remindedDecisions.first())
+        main.postDelayed({
+            val minute = java.time.LocalTime.now().let { it.hour * 60 + it.minute }
+            val waiting = approvals.any { it.fingerprint == fingerprint } || questions.any { it.fingerprint == fingerprint }
+            if (waiting && !settings.quiet.isQuiet(minute)) notifier.remindDecision(fingerprint)
+        }, 45_000)
+    }
+
     override fun onApproval(request: ApprovalRequest) {
         main.post {
             approvals = approvals.filter { it.fingerprint != request.fingerprint } + request
@@ -750,6 +762,7 @@ class AppModel(private val context: Context) : LinkListener {
             val gone = Runnable { removeApproval(request.fingerprint) }
             expiry[request.fingerprint] = gone
             main.postDelayed(gone, Protocol.APPROVAL_TTL_MS)
+            scheduleDecisionReminder(request.fingerprint)
         }
     }
 
@@ -761,10 +774,12 @@ class AppModel(private val context: Context) : LinkListener {
             val gone = Runnable { removeQuestion(request.fingerprint) }
             expiry[request.fingerprint] = gone
             main.postDelayed(gone, Protocol.APPROVAL_TTL_MS)
+            scheduleDecisionReminder(request.fingerprint)
         }
     }
 
     private fun removeQuestion(fingerprint: String) {
+        notifier.cancelReminder(fingerprint)
         expiry.remove(fingerprint)?.let { main.removeCallbacks(it) }
         questions = questions.filter { it.fingerprint != fingerprint }
     }
@@ -818,6 +833,7 @@ class AppModel(private val context: Context) : LinkListener {
     }
 
     override fun onApprovalResolved(fingerprint: String) {
+        notifier.cancelReminder(fingerprint)
         main.post {
             removeQuestion(fingerprint)
             removeApproval(fingerprint)

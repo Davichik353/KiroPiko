@@ -96,3 +96,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid #a8edd4; outline-
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; } }
 #bot-canvas { transition: opacity .4s ease; }
 #island-clip { border-color: var(--kiro-music-accent, rgba(128, 184, 164, .18)); transition: border-color 1s ease; }
+.approval-explanation { font-size: 11px; line-height: 1.45; max-height: 130px; overflow: auto; color: var(--text-dim, #b1c2ba); }
+.approval-explanation summary { cursor: pointer; color: #7eddbb; }
+.approval-explanation p { margin: 6px 0; }
+.task-summary { display: flex; flex-direction: column; gap: 6px; max-height: 100px; overflow: auto; font-size: 11px; line-height: 1.4; color: #b1c2ba; }
+.chat-routing { font-size: 10px; line-height: 1.4; color: #b1c2ba; padding: 0 8px; }
+.chat-auto[aria-pressed="true"] { color: #7eddbb; border: 1px solid #7eddbb; }

@@ -172,6 +172,19 @@ pub fn model_for(settings: &Settings, provider: &str) -> String {
         .unwrap_or_default()
 }
 
+/// A per-turn choice never changes the provider, saved defaults or phone permissions.
+pub fn auto_settings(settings: &Settings, model: Option<String>) -> Result<Settings, String> {
+    let mut next = settings.clone();
+    if let Some(model) = model {
+        if !next.chat_auto_model || model.trim().is_empty() || model.len() > 200 || model.chars().any(char::is_control) {
+            return Err("Automatic model selection is disabled or invalid.".into());
+        }
+        if next.chat_provider == ANTHROPIC { next.model = model; }
+        else { next.chat_models.insert(next.chat_provider.clone(), model); }
+    }
+    Ok(next)
+}
+
 /// A file rides along only if it is one of Coucou's own copies of a dropped
 /// file (files.rs puts them in the inbox). The page names the path, so without
 /// this any file the user can read could be sent to a chat provider.
@@ -264,6 +277,20 @@ pub async fn models(settings: &Settings, provider: &str) -> Result<Vec<ModelInfo
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn auto_choice_is_opt_in_and_does_not_change_provider_or_saved_defaults() {
+        let mut settings = Settings::default();
+        settings.chat_provider = "groq".into();
+        assert!(auto_settings(&settings, Some("openai/gpt-oss-20b".into())).is_err());
+        settings.chat_auto_model = true;
+        let selected = auto_settings(&settings, Some("openai/gpt-oss-20b".into())).unwrap();
+        assert_eq!(selected.chat_provider, "groq");
+        assert_eq!(model_for(&selected, "groq"), "openai/gpt-oss-20b");
+        assert!(settings.chat_models.is_empty());
+        assert!(auto_settings(&settings, Some("bad\nmodel".into())).is_err());
+        assert_eq!(selected.phone_chat_models, settings.phone_chat_models);
+    }
 
     fn turn_texts(history: &[Value]) -> Vec<(String, Value)> {
         history

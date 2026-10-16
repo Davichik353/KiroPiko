@@ -30,6 +30,22 @@ import com.coucou.android.mochi.BotState
 class Notifications(private val context: Context) {
     private val nm = context.getSystemService(NotificationManager::class.java)
 
+    /** One optional reminder; no command text or action is exposed on the lock screen. */
+    fun remindDecision(fingerprint: String) {
+        if (nm.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL) return
+        val ru = context.resources.configuration.locales[0].language == "ru"
+        val notification = Notification.Builder(context, CH_APPROVAL)
+            .setSmallIcon(R.drawable.ic_stat_mochi)
+            .setContentTitle(if (ru) "Нужно твоё решение" else "Your decision is needed")
+            .setContentText(if (ru) "Агент всё ещё ждёт ответа. Откройте KiroPiko." else "An agent is still waiting. Open KiroPiko.")
+            .setVisibility(Notification.VISIBILITY_PRIVATE)
+            .setContentIntent(open(fingerprint, false, idFor(fingerprint)))
+            .setAutoCancel(true).setTimeoutAfter(60_000).build()
+        runCatching { nm.notify("decision-reminder", idFor(fingerprint), notification) }
+    }
+
+    fun cancelReminder(fingerprint: String) { nm.cancel("decision-reminder", idFor(fingerprint)) }
+
     init {
         nm.deleteNotificationChannel("approvals")
         nm.deleteNotificationChannel("approvals_v2")

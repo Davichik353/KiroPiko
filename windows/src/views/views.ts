@@ -32,6 +32,8 @@ import { SPOTIFY_ID } from "../core/spotify";
 import type { Outfit, OutfitSelection } from "../mochi/wardrobe";
 import { language, t, tl, type Msg } from "../i18n/i18n";
 import type { ViewCommand } from "../island/shortcuts";
+import { explainAction } from "../nova/decisions/explain";
+import { taskSummary } from "../nova/history/summary";
 
 export interface ViewActions {
   setView(v: IslandViewName): void;
@@ -520,8 +522,9 @@ function buildApproval(actions: ViewActions): ViewHost {
   const who = h("div");
   const code = h("div", { class: "code" });
   const row = h("div", { class: "actions" });
+  const explanation = h("details", { class: "approval-explanation" }, h("summary", { text: "Объясни перед Allow" }));
   const el = h("div", { class: "view" },
-    card("amber", stack(116, 16, who, code, row), foldButton(actions)));
+    card("amber", stack(116, 16, who, code, explanation, row), foldButton(actions)));
   let rowKey = "";
   // The card pops up under a cursor that was busy with something else: a click
   // meant for the window underneath must not land on Allow. Clicks in the first
@@ -539,6 +542,9 @@ function buildApproval(actions: ViewActions): ViewHost {
       if (req !== shownFor) {
         shownFor = req;
         shownAt = performance.now();
+        clear(explanation);
+        explanation.append(h("summary", { text: "Объясни перед Allow" }));
+        for (const line of explainAction(State.pendingApproval?.tool ?? "", State.pendingApproval?.command ?? "")) explanation.append(h("p", { text: line }));
       }
       clear(who);
       who.append(agentWho(State.focusTask, t("needs permission")));
@@ -689,12 +695,13 @@ function buildError(actions: ViewActions): ViewHost {
 function buildFinished(actions: ViewActions): ViewHost {
   const who = h("div");
   const title = h("div", { class: "title one-line" });
+  const summary = h("div", { class: "task-summary" });
   const open = btn(tl("Open terminal"), "primary", () => actions.openTerminal());
   const row = h("div", { class: "actions" },
     open,
     btn(tl("OK"), "secondary", () => actions.collapse()),
   );
-  const el = h("div", { class: "view" }, card("green", stack(116, 16, who, title, row)));
+  const el = h("div", { class: "view" }, card("green", stack(116, 16, who, title, summary, row)));
   return {
     el,
     sync() {
@@ -704,6 +711,11 @@ function buildFinished(actions: ViewActions): ViewHost {
       // The final message, else the last step that is not a diff (FinishedView).
       const task = State.focusTask;
       title.textContent = task?.finalLine || (task && lastTextStep(task.steps)) || t("Session finished");
+      clear(summary);
+      if (task) {
+        const report = taskSummary(task, State.sessionDiffs.get(task.id) ?? []);
+        summary.append(h("small", { text: `Файлы: ${report.files.join(", ") || "изменения не зарегистрированы"}` }), h("small", { text: report.checks }), h("small", { text: report.next }));
+      }
       // Sessions from the Claude desktop app live there, not in a terminal.
       const label = task?.id === "agent_claude-desktop" ? t("Open Claude") : t("Open terminal");
       const span = open.firstElementChild as HTMLElement;

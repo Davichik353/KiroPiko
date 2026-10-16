@@ -16,6 +16,7 @@ import {
 import { Sound } from "../core/sound";
 import { Speech } from "../nova/voice/speech";
 import { showNotice } from "../nova/preview";
+import { chooseAutoModel } from "../nova/assistant/auto-model";
 import { State, type ChatMessage } from "../core/state";
 import type { ViewHost } from "./views";
 import { N_, t, tl } from "../i18n/i18n";
@@ -43,7 +44,8 @@ function bubble(message: ChatMessage): HTMLElement {
   }
   const reply = h("div", { class: "reply" });
   renderMarkdown(reply, message.content);
-  return h("div", { class: "chat-row" }, reply);
+  return h("div", { class: "chat-row", style: "flex-direction:column" }, reply,
+    message.modelLabel ? h("small", { class: "chat-routing", text: message.modelLabel }) : null);
 }
 
 function typingDots(): HTMLElement {
@@ -225,6 +227,15 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     svg(ICONS.chevronUpDown, 9, { stroke: 2 }),
   );
   const modelRow = h("div", { class: "model-row" }, modelBtn);
+  const auto = h("button", { class: "nova-speech-btn chat-auto", text: "Авто", title: "Выбор модели внутри выбранного провайдера. Цена и бесплатная квота не проверяются." });
+  const routing = h("div", { class: "chat-routing", role: "status" });
+  auto.onclick = async () => {
+    if (sending) return;
+    const next = { ...State.settings, chatAutoModel: !State.settings.chatAutoModel };
+    try { await Bridge.saveSettings(next); State.settings = next; State.notify(); }
+    catch (err) { showNotice(String(err)); }
+  };
+  modelRow.append(auto);
   const readReply = h("button", { class: "nova-speech-btn", text: "Озвучить", title: "Озвучить последний ответ", disabled: true });
   const stopSpeech = h("button", { class: "nova-speech-btn", text: "Стоп", title: "Остановить озвучивание", disabled: true });
   modelRow.append(readReply, stopSpeech);
@@ -240,7 +251,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     body.classList.toggle("picking", picker.isOpen);
     drawModelButton();
   });
-  body.append(chipRow, log, picker.el, modelRow, bar);
+  body.append(chipRow, log, picker.el, routing, modelRow, bar);
 
   const el = h("div", { class: "view" }, h("div", { class: "card wash chat-card" }, body));
   (el.querySelector(".card") as HTMLElement).style.setProperty("--wash", "rgba(99,102,241,0.5)");
@@ -256,6 +267,9 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     modelName.textContent = activeModel(State.settings) || t(STRINGS.noModel);
     modelBtn.classList.toggle("open", picker.isOpen);
     modelBtn.disabled = sending;
+    auto.disabled = sending;
+    auto.setAttribute("aria-pressed", String(State.settings.chatAutoModel));
+    auto.textContent = State.settings.chatAutoModel ? "Авто · вкл" : "Авто";
   }
 
   modelBtn.addEventListener("click", () => {
@@ -295,8 +309,17 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
       State.chatHistory.length === 1 && file ? { kind: "file", name: file.name, path: file.path } : null;
 
     try {
-      const reply = await Bridge.chatSend(query, context);
-      State.chatHistory.push({ id: nextId++, role: "assistant", content: reply.text });
+      let selected: string | undefined;
+      if (State.settings.chatAutoModel) {
+        const provider = State.settings.chatProvider;
+        const models = await Bridge.chatModels(provider);
+        const image = !!context && context.kind === "file" && /\.(png|jpe?g|webp|gif)$/i.test(context.name);
+        const choice = chooseAutoModel(models, activeModel(State.settings), query, image);
+        selected = choice.model;
+        routing.textContent = `${providerDef(provider).name} · ${selected} — ${choice.reason}. Стоимость определяется провайдером.`;
+      } else routing.textContent = `${providerDef(State.settings.chatProvider).name} · ${activeModel(State.settings)}`;
+      const reply = await Bridge.chatSend(query, context, selected);
+      State.chatHistory.push({ id: nextId++, role: "assistant", content: reply.text, modelLabel: routing.textContent ?? undefined });
       State.stateOverride = null;
       Sound.play("finish");
     } catch (err) {

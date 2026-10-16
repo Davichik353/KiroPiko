@@ -2,6 +2,7 @@ import { h, clear } from "../../views/dom";
 import { State } from "../../core/state";
 import { History } from "./store";
 import { panel } from "../panel";
+import { taskSummary } from "./summary";
 import type { ViewActions, ViewHost } from "../../views/views";
 const labels: Record<string, string> = { working: "Работает", thinking: "Думает", searching: "Поиск", approval: "Нужно разрешение", question: "Вопрос", error: "Ошибка", finished: "Завершено", ratelimit: "Лимит", idle: "Ожидание", sleeping: "Отдых" };
 export function observeHistory() {
@@ -12,7 +13,7 @@ export function observeHistory() {
     for (const task of State.tasks) {
       if (task.isIntegration) continue;
       present.add(task.id);
-      if (seen.get(task.id) !== task.state) History.add(task.id, task.name, task.state);
+      if (seen.get(task.id) !== task.state) History.add(task.id, task.name, task.state, task.state === "finished" ? taskSummary(task, State.sessionDiffs.get(task.id) ?? []) : undefined);
       seen.set(task.id, task.state);
     }
     for (const id of seen.keys()) if (!present.has(id)) seen.delete(id);
@@ -34,6 +35,9 @@ export function buildHistory(actions: ViewActions): ViewHost {
         h("small", { text: `${new Date(entry.at).toLocaleString()}${live ? " · открыть сессию" : " · сессия закрыта"}` }));
       row.onclick = () => { if (State.tasks.some(t => t.id === entry.taskId)) { actions.setFocus(entry.taskId); actions.setView("developer"); } };
       list.append(row);
+      if (entry.summary) list.append(h("div", { class: "nova-metric" },
+        h("strong", { text: entry.summary.outcome }), h("small", { text: `Файлы: ${entry.summary.files.join(", ") || "изменения не зарегистрированы"}` }),
+        h("small", { text: entry.summary.checks }), h("small", { text: entry.summary.next })));
     }
     rendered = History.entries;
   };
@@ -43,5 +47,5 @@ export function buildHistory(actions: ViewActions): ViewHost {
   };
   render();
   return { el: panel("История", "ПОСЛЕДНИЕ 200 СОБЫТИЙ", h("div", {},
-    h("p", { class: "nova-status", text: "Локально хранятся время, имя и состояние задачи. Текст команд и разговоров не сохраняется." }), confirm, list)), sync() { if (rendered !== History.entries) render(); } };
+    h("p", { class: "nova-status", text: "Локально хранятся события и итоги: сообщение агента, имена изменённых файлов и сведения о проверках. Полные команды и разговоры не сохраняются." }), confirm, list)), sync() { if (rendered !== History.entries) render(); } };
 }

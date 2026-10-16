@@ -386,7 +386,6 @@ function handleHook(island: Island, payload: HookPayload) {
     }
 
     case "Stop": {
-      State.updateTask(agentId, "finished");
       // Claude Code puts the turn's answer in the Stop payload itself, so there is
       // no transcript to read (the relay does not even forward its path). Other
       // agents report their last words the same way (Hermes, Codex) or as
@@ -397,6 +396,7 @@ function handleHook(island: Island, payload: HookPayload) {
         const t = State.tasks.find((x) => x.id === agentId);
         if (t) t.finalLine = finalText;
       }
+      State.updateTask(agentId, "finished");
       Sound.play("finish");
       // A card waiting for an answer is never covered by another alert.
       if (focused && !State.pendingApproval) surface("finished", true);
@@ -458,6 +458,9 @@ function handleHook(island: Island, payload: HookPayload) {
       // CLI, Muse Code — same as the Mac) get a card. Anyone else's request is
       // declined at once, so the agent asks in its own terminal.
       if (isExternalAgent && !APPROVAL_AGENTS.has(validAgent!)) {
+        ensurePill();
+        State.updateTask(agentId, "approval");
+        State.appendStep(agentId, "Запрос разрешения ожидает ответа в терминале");
         if (payload.request_id) void Bridge.approvalDecline(payload.request_id);
         break;
       }
@@ -467,6 +470,9 @@ function handleHook(island: Island, payload: HookPayload) {
       // — that would leave a human staring at request B while request A waits for
       // a decision nobody can give. Hand it straight back to the terminal.
       if (State.pendingApproval && State.pendingApproval.requestId !== requestId) {
+        ensurePill();
+        State.updateTask(agentId, "approval");
+        State.appendStep(agentId, "Дополнительный запрос ожидает ответа в терминале");
         if (requestId) void Bridge.approvalDecline(requestId);
         break;
       }

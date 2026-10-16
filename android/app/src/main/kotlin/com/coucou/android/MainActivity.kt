@@ -371,6 +371,7 @@ private fun Home(
                 },
             )
         }
+        item { Box(Modifier.padding(horizontal = Gutter)) { com.coucou.android.ui.DecisionPanel(model, onReview, onQuestion, onSession) } }
         // The link had worked and ended: what happened and how long ago, instead of a silent state. And, only if it would help, the battery setting.
         if (model.mode == Mode.PAIRED && model.linkState != LinkState.CONNECTED) {
             item { Box(Modifier.padding(horizontal = Gutter)) { LinkHealthPanel(model, onDiagnostics) } }

@@ -50,6 +50,7 @@ pub struct Settings {
     /// openai_compat.rs ("openai", "google", "openrouter"), or a model server
     /// of local_chat.rs ("ollama", "lmstudio", "custom"). Picked in the chat view.
     pub chat_provider: String,
+    pub chat_auto_model: bool,
     /// The model picked for each provider other than Anthropic (whose model is
     /// `model`), by provider id.
     pub chat_models: BTreeMap<String, String>,
@@ -159,6 +160,7 @@ impl Default for Settings {
             plan_relay_installed: false,
             show_codex_plan_in_notch: false,
             chat_provider: crate::chat::ANTHROPIC.into(),
+            chat_auto_model: false,
             chat_models: BTreeMap::new(),
             ollama_url: String::new(),
             lmstudio_url: String::new(),
@@ -454,6 +456,7 @@ mod tests {
   "planRelayInstalled": true,
   "showCodexPlanInNotch": true,
   "chatProvider": "ollama",
+  "chatAutoModel": false,
   "chatModels": { "ollama": "llama3.2", "openai": "gpt-x" },
   "ollamaUrl": "http://127.0.0.1:11434",
   "lmstudioUrl": "http://127.0.0.1:1234",
@@ -969,6 +972,7 @@ mod tests {
                 "planRelayInstalled",
                 "showCodexPlanInNotch",
                 "chatProvider",
+                "chatAutoModel",
                 "chatModels",
                 "ollamaUrl",
                 "lmstudioUrl",
