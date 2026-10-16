@@ -50,7 +50,7 @@ object ToolLabels {
     fun action(tool: String): String {
         val name = tool.trim()
         if (name.isEmpty()) return "do something"
-        return ACTIONS[key(name)] ?: clean(name).lowercase()
+        return CoreLanguage.label(ACTIONS[key(name)] ?: clean(name).lowercase())
     }
 
     private const val SEP = " · "
@@ -76,7 +76,7 @@ object ToolLabels {
         if (!looksLikeAName(head)) return ""
         // An unknown word shows only if it can be a tool's name: a key or a token pasted in its place never does.
         if (KNOWN[key(head)] == null && !plausibleToolName(head)) return ""
-        val tool = KNOWN[key(head)] ?: clean(head)
+        val tool = CoreLanguage.label(KNOWN[key(head)] ?: clean(head))
         val program = if (rest.isNotEmpty()) SafeText.requestLabel(head, rest).substringAfter(SEP, "") else ""
         return if (program.isNotEmpty()) "$tool$SEP$program" else tool
     }

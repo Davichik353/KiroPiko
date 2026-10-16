@@ -36,9 +36,9 @@ class LicencesTest {
         assertTrue(n.contains("part of Coucou by Louis Raillé"))
         assertTrue(n.contains("https://github.com/Louis-CFM/coucou"))
         assertTrue(n.contains("released under the MIT License"))
-        assertTrue(n.contains("NOT covered by the MIT License"))
-        assertTrue(n.contains("LICENSE-ASSETS.md"))
-        assertTrue(n.contains("written permission"))
+        assertTrue(n.contains("KiroPiko replaces"))
+        assertTrue(n.contains("gen-nova-sounds.mjs"))
+        assertTrue(n.contains("Android source code is © Rhytam Biswas under MIT"))
         assertTrue(n.contains("ZXing Core 3.5.3") && n.contains("Apache License, Version 2.0"))
         assertTrue(n.contains("Android Open Source Project") && n.contains("JetBrains"))
     }

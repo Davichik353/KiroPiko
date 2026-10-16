@@ -17,6 +17,8 @@ mod island;
 mod local_chat;
 mod log;
 mod net;
+mod nova_doctor;
+mod nova_windows;
 mod openai_compat;
 mod phone_link;
 mod pipe;
@@ -30,6 +32,9 @@ mod settings;
 mod shortcuts;
 mod sounds;
 mod spotify;
+mod nova_music;
+mod yandex_music;
+mod nova_mail;
 mod tray;
 #[cfg(windows)]
 mod webview_drop;
@@ -108,6 +113,7 @@ fn save_settings(app: AppHandle, shared: State<Shared>, settings: Settings) {
         (screen_changed, autostart_changed, shortcuts_changed)
     };
     let settings = shared.settings.lock().unwrap().clone();
+    if !settings.nova_allow_microphone { nova_windows::nova_voice_stop(); }
     if let Err(err) = settings::save(&settings) {
         log::line(format!("could not save settings: {err}"));
     }
@@ -148,7 +154,7 @@ fn set_system_languages(app: AppHandle, languages: Vec<String>) {
 fn language_changed(app: &AppHandle) {
     tray::retitle(app);
     if let Some(window) = app.get_webview_window("settings") {
-        let _ = window.set_title(&i18n::t("Settings — Coucou"));
+        let _ = window.set_title("Настройки — KiroPiko");
     }
 }
 
@@ -610,7 +616,7 @@ fn create_settings_window(app: &AppHandle) {
     let url = settings_page_url(app);
     match WebviewWindowBuilder::new(app, "settings", url)
         .additional_browser_args(BROWSER_ARGS)
-        .title(i18n::t("Settings — Coucou"))
+        .title("Настройки — KiroPiko")
         .inner_size(560.0, 680.0)
         .min_inner_size(460.0, 480.0)
         .resizable(true)
@@ -680,6 +686,18 @@ pub fn run() {
         .manage(shortcuts::Registry::default())
         .manage(recap::load())
         .invoke_handler(tauri::generate_handler![
+            nova_doctor::nova_system_snapshot,
+            nova_windows::nova_attention_state,
+            nova_windows::nova_voice_listen,
+            nova_windows::nova_voice_stop,
+            nova_windows::nova_open_program,
+            nova_windows::nova_music_control,
+            nova_windows::nova_export_doctor_report,
+            nova_music::nova_media_snapshot,
+            nova_music::nova_media_artwork,
+            nova_music::nova_media_control,
+            nova_mail::nova_send_mail,
+            nova_windows::nova_capture_screen,
             boot,
             save_settings,
             set_system_languages,
@@ -765,6 +783,7 @@ pub fn run() {
             desktop::desktop_mochi_carry_end,
             desktop::desktop_mochi_drag_begin,
             desktop::desktop_mochi_drag_move,
+            desktop::nova_desktop_roam,
             desktop::desktop_mochi_drag_end,
             desktop::desktop_mochi_fly_out,
             desktop::desktop_mochi_fly_home,

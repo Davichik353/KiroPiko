@@ -76,14 +76,9 @@ fun outfitLabelRes(id: String): Int = when (id) {
 /** A little Mochi wearing [outfit], the PC's wardrobe icon (drawn by the same code as the big one). */
 @Composable
 fun OutfitIcon(outfit: Outfit, size: Dp, modifier: Modifier = Modifier) {
+    val engine = remember(outfit) { MochiEngine({ 0.0 }).apply { setOutfit(outfit, animated = false) } }
     Canvas(modifier.size(size)) {
-        drawIntoCanvas { c ->
-            c.save()
-            val k = this.size.width / 40f
-            c.scale(k, k)
-            drawIconMochi(Ctx2D(ComposeGfx(c, Rect(0f, 0f, 40f, 40f))), 40.0, outfit)
-            c.restore()
-        }
+        with(com.coucou.android.mochi.KiroPainter) { drawKiro(engine, 0.0) }
     }
 }
 
@@ -113,7 +108,7 @@ fun WardrobeScreen(model: AppModel, onBack: () -> Unit) {
     val worn = model.dress()
     val first = remember { androidx.compose.runtime.mutableStateOf(true) }
     LaunchedEffect(worn) {
-        preview.setOutfit(worn, animated = !first.value)
+        preview.setOutfit(worn, animated = false)
         first.value = false
     }
     val following = s.outfit == Wardrobe.FOLLOW
@@ -148,7 +143,7 @@ fun WardrobeScreen(model: AppModel, onBack: () -> Unit) {
                     Box(Modifier.weight(1f)) {
                         OutfitCell(label, chosen, onClick = { model.updateSettings(s.copy(outfit = id)) }) {
                             when (id) {
-                                "none" -> NoOutfitIcon(56.dp)
+                                "none" -> OutfitIcon(Outfit.NONE, 56.dp)
                                 "auto" -> Box(contentAlignment = Alignment.BottomCenter) {
                                     OutfitIcon(seasonal, 56.dp)
                                     Text(
@@ -182,6 +177,6 @@ private fun OutfitCell(label: String, chosen: Boolean, onClick: () -> Unit, icon
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         icon()
-        Text(label, style = TypeScale.LABEL.style(t.text.c()), maxLines = 2, textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis)
+        Text(label, modifier = Modifier.height(36.dp), style = TypeScale.LABEL.style(t.text.c()), maxLines = 2, textAlign = TextAlign.Center, overflow = TextOverflow.Ellipsis)
     }
 }

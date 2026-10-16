@@ -10,6 +10,7 @@ import { washRGBA, type IslandViewName, type Wash } from "../core/layout";
 import { createMiniBot, pruneMiniBots } from "../mochi/minibots";
 import { buildPrompt } from "./chat";
 import { buildChoose, buildUpload, buildUploading } from "./upload";
+import { buildMail } from "./mail";
 import { renderIntegrationCard, type IntegrationCardHooks } from "./integrations";
 import { highlightRow, listRows, openRow } from "./github";
 import { pillDefinition, sessionSubtitle } from "../core/pills";
@@ -21,6 +22,11 @@ import { lastTextStep } from "../core/diff";
 import { Bridge } from "../core/bridge";
 import { buildRecap } from "./recap";
 import { buildWardrobe } from "./wardrobe";
+import { buildDoctor, buildDeveloper, buildNovaTools } from "./nova";
+import { buildMusic } from "../nova/music/view";
+import { buildHistory } from "../nova/history/view";
+import { buildConnections } from "../nova/connections";
+import { buildOnboarding } from "../nova/onboarding";
 import { buildSpotifyCard, buildSpotifyPill, type SpotifyPillHost } from "./spotify";
 import { SPOTIFY_ID } from "../core/spotify";
 import type { Outfit, OutfitSelection } from "../mochi/wardrobe";
@@ -110,6 +116,10 @@ export function buildHeader(actions: ViewActions): ViewHost {
   const tabHome = h("button", { class: "tab", title: tl("Overview"), onclick: () => go("overview") }, svg(ICONS.house, 13));
   const tabChat = h("button", { class: "tab", title: tl("Ask"), onclick: () => go("prompt") }, svg(ICONS.bubble, 13));
   const tabDrop = h("button", { class: "tab", title: tl("Drop"), onclick: () => go("upload") }, svg(ICONS.plus, 13));
+  const tabDoctor = h("button", { class: "tab nova-tab", title: "Диагностика Windows", "aria-label": "System Doctor", onclick: () => go("doctor"), text: "PC" });
+  const tabDev = h("button", { class: "tab nova-tab", title: "Сессии агентов", "aria-label": "Developer Mode", onclick: () => go("developer"), text: "</>" });
+  const tabTools = h("button", { class: "tab nova-tab", title: "Vision, Voice и интеграции", "aria-label": "Инструменты KiroPiko", onclick: () => go("nova-tools"), text: "✦" });
+  const tabMusic = h("button", { class: "tab", title: "Музыка", "aria-label": "Музыка", onclick: () => go("music") }, svg(ICONS.musicNote, 13));
 
   const gearBtn = h("button", { title: tl("Settings"), onclick: () => go("settings") }, svg(ICONS.gear, 14));
   const soundBtn = h("button", { title: tl("Mute"), onclick: () => actions.toggleSound() }, svg(ICONS.speakerOn, 14));
@@ -127,7 +137,7 @@ export function buildHeader(actions: ViewActions): ViewHost {
   const el = h(
     "div",
     { id: "header" },
-    h("div", { class: "tabs" }, tabHome, tabChat, tabDrop),
+    h("div", { class: "tabs" }, h("span", { class: "nova-wordmark", text: "KiroPiko" }), tabHome, tabChat, tabDoctor, tabDev, tabMusic, tabDrop, tabTools),
     h("div", { class: "header-actions" }, planPills, gearBtn, soundBtn),
   );
   const headerActions = el.lastElementChild as HTMLElement;
@@ -139,6 +149,10 @@ export function buildHeader(actions: ViewActions): ViewHost {
       tabHome.classList.toggle("on", v === "overview" || v === "empty");
       tabChat.classList.toggle("on", v === "prompt");
       tabDrop.classList.toggle("on", v === "upload");
+      tabDoctor.classList.toggle("on", v === "doctor");
+      tabDev.classList.toggle("on", v === "developer");
+      tabTools.classList.toggle("on", v === "nova-tools");
+      tabMusic.classList.toggle("on", v === "music");
       gearBtn.classList.toggle("on", v === "settings");
       clear(gearBtn);
       gearBtn.append(svg(v === "settings" ? ICONS.gearFill : ICONS.gear, 14));
@@ -428,8 +442,8 @@ function buildPill(task: AgentTask, actions: ViewActions): HTMLElement {
   const label = task.id === "integration_claude" ? "VS Code" : task.name;
   const canvas = createMiniBot(task, 24);
   const pill = h(
-    "div",
-    { class: "pill", onclick: () => actions.setFocus(task.id) },
+    "button",
+    { class: "pill", type: "button", "aria-label": task.name, onclick: () => actions.setFocus(task.id) },
     canvas,
     h("span", { class: "lbl", text: label }),
   );
@@ -475,11 +489,11 @@ function buildEmpty(actions: ViewActions): ViewHost {
     h(
       "div",
       { style: "display:flex;flex-direction:column;gap:5px" },
-      h("div", { class: "title", text: tl("Nothing running right now.") }),
-      h("div", { class: "sub", text: tl("Drop a file or window, or ask me anything.") }),
+      h("div", { class: "title", text: "Привет, я Киро" }),
+      h("div", { class: "sub", text: "Помогу с кодом и проверю состояние компьютера." }),
     ),
     h("div", { class: "grow" }),
-    btn(tl("Ask Claude"), "primary", () => actions.setView("prompt")),
+    btn("Открыть чат", "primary", () => actions.setView("prompt")),
   );
   return { el: h("div", { class: "view" }, card(null, body)), sync() {} };
 }
@@ -806,6 +820,13 @@ export function buildViews(
   onChatHeightChange: () => void,
 ): Map<IslandViewName, ViewHost> {
   const map = new Map<IslandViewName, ViewHost>();
+  map.set("doctor", buildDoctor(actions));
+  map.set("developer", buildDeveloper(actions));
+  map.set("nova-tools", buildNovaTools(actions));
+  map.set("music", buildMusic(actions));
+  map.set("history", buildHistory(actions));
+  map.set("connections", buildConnections(actions));
+  map.set("onboarding", buildOnboarding(actions));
   map.set("overview", buildOverview(actions));
   map.set("empty", buildEmpty(actions));
   map.set("approval", buildApproval(actions));
@@ -821,8 +842,8 @@ export function buildViews(
   map.set("choose", buildChoose(actions));
   map.set("recap", buildRecap(actions));
   map.set("wardrobe", buildWardrobe(actions));
-  // Not in the Windows v1: sending a file by email, window attach + web result.
-  map.set("mail", buildPlaceholder(tl("Sending by email isn't in this version."), ""));
+  // Windows email uses Resend; web search placeholders remain separate.
+  map.set("mail", buildMail(actions));
   map.set("searching", buildPlaceholder(tl("Claude is searching…"), ""));
   map.set("result", buildPlaceholder(tl("Result"), ""));
   return map;

@@ -54,12 +54,12 @@ object GlanceBuilder {
         approvals: Int,
         nameOf: (String) -> String,
     ): Glance {
-        if (!paired) return Glance("Not paired", "Open Coucou to connect to your computer", GlanceTone.CALM, false, emptyList(), 0)
+        if (!paired) return Glance(CoreLanguage.text("Not paired", "Компьютер не подключён"), CoreLanguage.text("Open Coucou to connect to your computer", "Откройте KiroPiko для подключения компьютера"), GlanceTone.CALM, false, emptyList(), 0)
         if (link != LinkState.CONNECTED) {
             val connecting = link == LinkState.CONNECTING
             return Glance(
-                if (connecting) "Connecting…" else "Not connected",
-                if (connecting) "Reaching your computer" else "Coucou cannot reach your computer",
+                if (connecting) CoreLanguage.text("Connecting…", "Подключение…") else CoreLanguage.text("Not connected", "Нет подключения"),
+                if (connecting) CoreLanguage.text("Reaching your computer", "Подключаюсь к компьютеру") else CoreLanguage.text("Coucou cannot reach your computer", "Компьютер недоступен"),
                 GlanceTone.CALM, false, emptyList(), 0,
             )
         }
@@ -72,43 +72,43 @@ object GlanceBuilder {
         val where = desktop?.takeIf { it.isNotBlank() }
         return when {
             approvals > 0 -> Glance(
-                "Waiting for you",
-                if (approvals == 1) "1 request to approve" else "$approvals requests to approve",
+                CoreLanguage.text("Waiting for you", "Ожидает вас"),
+                if (approvals == 1) CoreLanguage.text("1 request to approve", "Нужен ответ на 1 запрос") else CoreLanguage.text("$approvals requests to approve", "Запросов: $approvals"),
                 GlanceTone.ATTENTION, true, lines, waiting,
             )
             questions > 0 -> Glance(
-                "Waiting for your answer",
-                if (questions == 1) "1 question from an agent" else "$questions questions from agents",
+                CoreLanguage.text("Waiting for your answer", "Ожидает вашего ответа"),
+                if (questions == 1) CoreLanguage.text("1 question from an agent", "У агента есть вопрос") else CoreLanguage.text("$questions questions from agents", "Вопросов: $questions"),
                 GlanceTone.ATTENTION, true, lines, waiting,
             )
             trouble > 0 -> Glance(
-                "An agent needs a look",
-                if (trouble == 1) "1 agent stopped" else "$trouble agents stopped",
+                CoreLanguage.text("An agent needs a look", "Агенту нужно внимание"),
+                if (trouble == 1) CoreLanguage.text("1 agent stopped", "Агент остановлен") else CoreLanguage.text("$trouble agents stopped", "Агентов остановлено: $trouble"),
                 GlanceTone.TROUBLE, true, lines, 0,
             )
             busy > 0 -> Glance(
-                if (busy == 1) "${nameOf(ranked.first { it.state in BUSY }.pillId)} is working" else "$busy agents are working",
-                where?.let { "On $it" } ?: "Working",
+                if (busy == 1) CoreLanguage.text("${nameOf(ranked.first { it.state in BUSY }.pillId)} is working", "${nameOf(ranked.first { it.state in BUSY }.pillId)} работает") else CoreLanguage.text("$busy agents are working", "Работают агенты: $busy"),
+                where?.let { CoreLanguage.text("On $it", "На $it") } ?: CoreLanguage.text("Working", "Работает"),
                 GlanceTone.BUSY, true, lines, 0,
             )
             sessions.any { it.state == BotState.FINISHED } -> Glance(
-                "All done", where?.let { "On $it" } ?: "Finished", GlanceTone.OK, true, lines, 0,
+                CoreLanguage.text("All done", "Всё готово"), where?.let { CoreLanguage.text("On $it", "На $it") } ?: CoreLanguage.text("Finished", "Завершено"), GlanceTone.OK, true, lines, 0,
             )
-            else -> Glance("Connected", where?.let { "To $it" } ?: "Nothing is running", GlanceTone.OK, true, lines, 0)
+            else -> Glance(CoreLanguage.text("Connected", "Подключено"), where?.let { CoreLanguage.text("To $it", "Компьютер: $it") } ?: CoreLanguage.text("Nothing is running", "Активных задач нет"), GlanceTone.OK, true, lines, 0)
         }
     }
 
     /** The plain line of a session: its state in a few words, never its step text or answer (those stay in the app). */
     fun lineOf(s: SessionInfo): String = when (s.state) {
-        BotState.APPROVAL -> "Waiting for your approval"
-        BotState.QUESTION -> "Has a question"
-        BotState.ERROR -> "Stopped on an error"
-        BotState.RATELIMIT -> "Hit a limit"
-        BotState.DIZZY -> "Needs a look"
-        BotState.FINISHED -> "Finished"
-        BotState.SLEEPING, BotState.IDLE -> "Idle"
-        BotState.THINKING -> "Thinking"
-        BotState.SEARCHING -> "Searching"
-        else -> "Working" // never the step text: it can hold a file name or a command
+        BotState.APPROVAL -> CoreLanguage.text("Waiting for your approval", "Нужно ваше разрешение")
+        BotState.QUESTION -> CoreLanguage.text("Has a question", "Есть вопрос")
+        BotState.ERROR -> CoreLanguage.text("Stopped on an error", "Остановка из-за ошибки")
+        BotState.RATELIMIT -> CoreLanguage.text("Hit a limit", "Достигнут лимит")
+        BotState.DIZZY -> CoreLanguage.text("Needs a look", "Нужно внимание")
+        BotState.FINISHED -> CoreLanguage.text("Finished", "Завершено")
+        BotState.SLEEPING, BotState.IDLE -> CoreLanguage.text("Idle", "Покой")
+        BotState.THINKING -> CoreLanguage.text("Thinking", "Думает")
+        BotState.SEARCHING -> CoreLanguage.text("Searching", "Ищет")
+        else -> CoreLanguage.text("Working", "Работает") // never the step text: it can hold a file name or a command
     }
 }

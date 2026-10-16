@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Widgets: dark by default; values-notnight/colors.xml is the light variant that follows the system day/night mode. -->
 <resources>
-    <color name="widget_card">#FF17181C</color>
-    <color name="widget_border">#FF3A3C44</color>
+    <color name="widget_card">#FF18201E</color>
+    <color name="widget_border">#FF303D38</color>
     <color name="widget_text">#FFFFFFFF</color>
     <color name="widget_text_soft">#D9FFFFFF</color>
     <color name="widget_text_secondary">#B3FFFFFF</color>

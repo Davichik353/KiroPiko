@@ -5,6 +5,13 @@
 export type IslandMode = "hidden" | "compact" | "expanded";
 
 export type IslandViewName =
+  | "history"
+  | "connections"
+  | "onboarding"
+  | "music"
+  | "doctor"
+  | "developer"
+  | "nova-tools"
   | "overview"
   | "empty"
   | "approval"
@@ -53,12 +60,13 @@ export interface ViewLayout {
 // The window is a fixed 720×320 (largest view) like the macOS panel; the island is
 // drawn inside it, glued to the top edge and horizontally centred.
 export const PANEL_W = 720;
-export const PANEL_H = 320;
+export const PANEL_H = 448;
+export const NOVA_TOP = 80;
 
 // No notch on a PC: these are the hidden/compact sizes from docs/SPEC.md.
 export const NOTCH_W = 184;
-export const NOTCH_H = 32;
-export const COMPACT_W = 288; // NOTCH_W + 104
+export const NOTCH_H = 38;
+export const COMPACT_W = 304;
 export const EXPANDED_W = 640;
 
 export const ROUNDED_CORNER = 14; // hidden / compact
@@ -69,6 +77,13 @@ export const WAKE_STRIP_W = 240;
 export const WAKE_STRIP_H = 6;
 
 export const VIEW_LAYOUTS: Record<IslandViewName, ViewLayout> = {
+  history: { height: 300, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
+  connections: { height: 300, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
+  onboarding: { height: 250, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
+  music: { height: 300, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
+  doctor: { height: 300, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
+  developer: { height: 280, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
+  "nova-tools": { height: 340, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
   overview: { height: 160, botX: 68, botY: null, botDiameter: 58, agentMode: "pills" },
   empty: { height: 160, botX: 70, botY: null, botDiameter: 62, agentMode: "none" },
   approval: { height: 160, botX: 62, botY: null, botDiameter: 56, agentMode: "column" },
@@ -81,7 +96,7 @@ export const VIEW_LAYOUTS: Record<IslandViewName, ViewLayout> = {
   // layout says 118 while its own comment says 103; the comment matches the spec.
   uploading: { height: 176, botX: 46, botY: 103, botDiameter: 20, agentMode: "none" },
   choose: { height: 176, botX: 60, botY: 101, botDiameter: 52, agentMode: "column" },
-  mail: { height: 240, botX: 56, botY: null, botDiameter: 46, agentMode: "column" },
+  mail: { height: 330, botX: 56, botY: null, botDiameter: 46, agentMode: "column" },
   prompt: { height: 160, botX: 52, botY: null, botDiameter: 44, agentMode: "column" },
   searching: { height: 160, botX: 52, botY: null, botDiameter: 44, agentMode: "column" },
   result: { height: 160, botX: 52, botY: null, botDiameter: 44, agentMode: "column" },

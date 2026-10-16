@@ -12,8 +12,8 @@ data class Palette(
 ) {
     companion object {
         val DARK = Palette(
-            background = 0xFF0E0F12, card = 0xFF16171B, line = 0xFF26282E,
-            text = 0xFFF3F4F6, textDim = 0xFFA1A6B0, accent = 0xFF8AB4FF, onAccent = 0xFF0E0F12, error = 0xFFFF8A80,
+            background = 0xFF101514, card = 0xFF18201E, line = 0xFF303D38,
+            text = 0xFFF0F6F3, textDim = 0xFFADBDB5, accent = 0xFF7EDDBB, onAccent = 0xFF101514, error = 0xFFFF8A80,
         )
 
         private fun lin(c: Int): Double {

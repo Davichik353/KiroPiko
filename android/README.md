@@ -1,10 +1,16 @@
-# Coucou for Android
+# KiroPiko Android preview
+
+Test APK: `release/KiroPiko-Android-0.1.0-preview.apk`. Android 11+. Russian follows the phone language; English is the fallback. This is a debug-signed local test build, not a store release. Pairing, chat and approvals have not yet been checked on a physical phone in this workspace.
+
+Based on Coucou by Louis Raillé and Android code by Rhytam Biswas (MIT). Internal package namespaces and the coucou://pair protocol remain compatible; the installed application ID is com.kiropiko.android.
+
+# KiroPiko for Android
 
 The Android app of [Coucou](https://github.com/Louis-CFM/coucou) by Louis Raillé, by Rhytam Biswas. It shows your coding
-agents as Mochi on your phone and lets you approve or deny their permission requests, answer their questions and chat
+agents as Kiro on your phone and lets you approve or deny their permission requests, answer their questions and chat
 through your computer's AI providers.
 
-The name, the Mochi character, the icon and the sounds are © Louis Raillé and used with permission (see
+The name, the Kiro character, the icon and the sounds are © Louis Raillé and used with permission (see
 [PERMISSION.md](PERMISSION.md)). The Android code is © Rhytam Biswas under the MIT License (see [LICENSE](LICENSE)). The app is free: no ads, no billing, no analytics.
 It is English only and dark only. Download the signed APK from the [Releases](https://github.com/Louis-CFM/coucou/releases/tag/android-v0.2.0) (Android 11 or later; it needs Coucou 0.4.0 or later on Windows or Linux).
 
@@ -14,7 +20,7 @@ Real screenshots from a Galaxy A12s. The pairing, chat and approval screens are 
 
 | Home | The island over other apps | Alert on a locked phone | Allow or Deny |
 |---|---|---|---|
-| <img src="../docs/media/android-home.jpg" width="180" alt="Home: Mochi, the agent list, plan usage and a service"> | <img src="../docs/media/android-island.jpg" width="180" alt="The island over the home screen while an agent works"> | <img src="../docs/media/android-lock-alert.jpg" width="180" alt="The lock screen: Approval needed, the command hidden"> | <img src="../docs/media/android-allow-deny.jpg" width="180" alt="A notification with Deny and Allow"> |
+| <img src="../docs/media/android-home.jpg" width="180" alt="Home: Kiro, the agent list, plan usage and a service"> | <img src="../docs/media/android-island.jpg" width="180" alt="The island over the home screen while an agent works"> | <img src="../docs/media/android-lock-alert.jpg" width="180" alt="The lock screen: Approval needed, the command hidden"> | <img src="../docs/media/android-allow-deny.jpg" width="180" alt="A notification with Deny and Allow"> |
 
 ## Build and test
 
@@ -42,7 +48,7 @@ The desktop side is in `windows/src-tauri/src/phone_link`; the protocol is `docs
 
 ## What it does
 
-- **Home**: the focused agent as a black hero panel (Mochi in the agent's colour, a plain sentence), the other agents below, plan
+- **Home**: the focused agent as a black hero panel (Kiro in the agent's colour, a plain sentence), the other agents below, plan
   usage and service cards when the computer offers them, and *Recent* (your own Allow/Deny decisions, kept only on the phone).
   Raw tool names become plain words (`core/ToolLabels.kt`); a command or path is never shown without a deliberate tap (`core/SafeText.kt`).
 - **Requests**: a sheet rises over any screen. Allow needs the fingerprint or screen lock, Deny does not, taps in the first 600 ms
@@ -58,20 +64,20 @@ The desktop side is in `windows/src-tauri/src/phone_link`; the protocol is `docs
 - **Away from home Wi-Fi** (optional): through your own Cloudflare relay, end-to-end encrypted; the direct link is always tried first.
 - **Keeping the link alive with the screen off**: an alarm every few minutes checks that the computer still answers and reconnects if not (Doze allows nothing more); Home says when and why the link was lost; Settings > Computer > *Can't connect?* checks the network, address, discovery, certificate, pairing code and relay; a calm hint suggests the battery setting ("Unrestricted", with the Samsung steps) only if it would help. Details and limits: `docs/ANDROID_LINK.md`, "Keeping the link alive".
 - **Widget, quick-settings tile, ongoing notification**: agent names and state words only. Updated when something changes, never on a timer.
-- **Widgets**: nine to pick from on the home screen, all on one card (24dp corners, a thin border, dark by default and light when the system is in day mode) with a gradient, a 1dp border and a glow in the colour of the state, the same palette for every Widget (`WidgetTone` in `core/WidgetData.kt`, `res/values/colors.xml`): green when an agent has finished, blue while it works, orange while something waits for you, soft grey when all is calm, and a muted grey with the "not connected" icon when the computer is not there. With several agents the most urgent one sets the colour (waiting, then working, then happy, then idle). Plan usage has a palette of its own so it never looks like a state: teal, yellow from 75% and red from 90% (`PlanUsageLook`); only from 90% is the percentage big and bold, with "Near limit" and the clock time it resets at ("resets at 14:30"). In the Widget picker each one shows a large, realistic preview with sample data (Android 12 and later; Android 11 shows a still picture of the card with Mochi), its name and a one-line description. The previews are static: vector Mochi faces in `res/drawable/preview_*`, layouts in `res/layout/widget_preview_*`.
-  - *Agents summary* (3x2, the first Widget, same receiver as before): its text and counts are unchanged, now on the shared card with a small Mochi in the state of your most urgent agent, a headline with a badge for what waits for you and up to three short lines with a state dot each. A tap anywhere opens the app; it has no buttons.
-  - *Mochi at a glance* (Solo, 2x2): Mochi in the state of your most urgent agent, its name and a state word.
-  - *All your agents* (List, 4x3): one row of at least 48dp per agent (Mochi's face, name, state word, dot), up to five, with a badge for what waits for you; with no agent, a centred empty state ("Waiting for your computer" / "No agents running").
-  - *Mochi, big* (4x4): no speech bubble any more. On the left Mochi with his glow and badge, then the agent's name and state word; on the right your plan usage (Claude and Codex, each with a thin bar that is teal, yellow from 75% and red from 90%, and a small percentage that becomes big and bold with "Near limit" from 90%), or "Plan usage is off" (a tap opens Settings) or "Not connected". Under them rounded buttons: two rows of three (Home, Chat, Settings, Recent, Top agent, Pair again; tinted orange while something waits), one row of four when medium, none when small.
+- **Widgets**: nine to pick from on the home screen, all on one card (24dp corners, a thin border, dark by default and light when the system is in day mode) with a gradient, a 1dp border and a glow in the colour of the state, the same palette for every Widget (`WidgetTone` in `core/WidgetData.kt`, `res/values/colors.xml`): green when an agent has finished, blue while it works, orange while something waits for you, soft grey when all is calm, and a muted grey with the "not connected" icon when the computer is not there. With several agents the most urgent one sets the colour (waiting, then working, then happy, then idle). Plan usage has a palette of its own so it never looks like a state: teal, yellow from 75% and red from 90% (`PlanUsageLook`); only from 90% is the percentage big and bold, with "Near limit" and the clock time it resets at ("resets at 14:30"). In the Widget picker each one shows a large, realistic preview with sample data (Android 12 and later; Android 11 shows a still picture of the card with Kiro), its name and a one-line description. The previews are static: vector Kiro faces in `res/drawable/preview_*`, layouts in `res/layout/widget_preview_*`.
+  - *Agents summary* (3x2, the first Widget, same receiver as before): its text and counts are unchanged, now on the shared card with a small Kiro in the state of your most urgent agent, a headline with a badge for what waits for you and up to three short lines with a state dot each. A tap anywhere opens the app; it has no buttons.
+  - *Kiro at a glance* (Solo, 2x2): Kiro in the state of your most urgent agent, its name and a state word.
+  - *All your agents* (List, 4x3): one row of at least 48dp per agent (Kiro's face, name, state word, dot), up to five, with a badge for what waits for you; with no agent, a centred empty state ("Waiting for your computer" / "No agents running").
+  - *Kiro, big* (4x4): no speech bubble any more. On the left Kiro with his glow and badge, then the agent's name and state word; on the right your plan usage (Claude and Codex, each with a thin bar that is teal, yellow from 75% and red from 90%, and a small percentage that becomes big and bold with "Near limit" from 90%), or "Plan usage is off" (a tap opens Settings) or "Not connected". Under them rounded buttons: two rows of three (Home, Chat, Settings, Recent, Top agent, Pair again; tinted orange while something waits), one row of four when medium, none when small.
   - *One-line status* (Status Pill, 4x1): one slim line with a dot, the agent's name and its state word, and four round buttons that open Home, Chat, Settings and Recent decisions. Narrower, the state word goes first, then the name; the text never runs under the buttons.
   - *Approvals waiting* (Waiting Alert, 2x2): calm when nothing waits, a bright orange "N waiting" when something does. A tap opens the app and the sheet rises by itself.
   - *Plan usage* (Usage Ring, 2x2): a ring for your Claude or Codex plan usage; "Turn on plan usage in the app" when it is off.
   - *Finished today* (Today, 2x2): agent tasks finished today, counted on this phone only and started again at local midnight by one inexact alarm (no exact-alarm permission, no wake-ups).
-  - *Mochi's mood* (Mood, 1x1): just his face.
+  - *Kiro's mood* (Mood, 1x1): just his face.
 
-  The buttons only open a screen of the app, from a closed list (`core/LaunchScreen.kt`) through the non-exported `LaunchActivity`; none approves, denies or sends anything, and `MainActivity` still reads no intent extra. A tap on Solo, Mochi Big, Status Pill, Mochi Mood or a List row opens that agent in the app. A request is still decided in the app, behind the fingerprint, never from a Widget. Widgets show agent names, state words and colours only, are redrawn when something changes (`updatePeriodMillis` stays 0) and a redraw that would look the same is skipped. On Android 12 and later they adapt to their size (small, medium, large). Code: `core/WidgetData.kt` (pure, tested), `app/WidgetHub.kt`, one class per Widget in `app/`, `app/MochiBitmap.kt`, `app/RingBitmap.kt`.
+  The buttons only open a screen of the app, from a closed list (`core/LaunchScreen.kt`) through the non-exported `LaunchActivity`; none approves, denies or sends anything, and `MainActivity` still reads no intent extra. A tap on Solo, Kiro Big, Status Pill, Kiro Mood or a List row opens that agent in the app. A request is still decided in the app, behind the fingerprint, never from a Widget. Widgets show agent names, state words and colours only, are redrawn when something changes (`updatePeriodMillis` stays 0) and a redraw that would look the same is skipped. On Android 12 and later they adapt to their size (small, medium, large). Code: `core/WidgetData.kt` (pure, tested), `app/WidgetHub.kt`, one class per Widget in `app/`, `app/KiroBitmap.kt`, `app/RingBitmap.kt`.
 - **Looking at every state without a computer** (debug builds only): `adb shell am broadcast -n com.coucou.android/.app.WidgetPreviewReceiver -a com.coucou.android.debug.WIDGET_STATE --es state <disconnected|empty|working|waiting|done|live>`; `live` goes back to the real state. The receiver is in `app/src/debug` and does not exist in a release build.
-- Mochi and his 11 outfits, sounds, wardrobe (Settings), a tap on Mochi slaps him, a long press pets him.
+- Kiro and his 11 outfits, sounds, wardrobe (Settings), a tap on Kiro slaps him, a long press pets him.
 
 ## Getting the phone link running on Windows
 

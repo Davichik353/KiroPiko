@@ -781,6 +781,30 @@ pub async fn desktop_mochi_drag_move(app: AppHandle, x: f64, y: f64) {
     }
 }
 
+/// Move only KiroPiko's own landed window, bounded to its current monitor work area.
+/// Never take over a user drag or a flight back to the island.
+#[tauri::command]
+pub fn nova_desktop_roam(app: AppHandle, x: f64, y: f64) -> bool {
+    if !x.is_finite() || !y.is_finite() { return false; }
+    let d = app.state::<Arc<Desktop>>().inner().clone();
+    if !matches!(d.mode, DesktopMode::Poll | DesktopMode::Window) { return false; }
+    let origin = {
+        let i = d.inner.lock().unwrap();
+        if !i.shown || !i.landed || i.carry.is_some() || i.asleep { return false; }
+        i.pos
+    };
+    let Some(display) = logic::display_near(origin, &displays(&app, &d)) else { return false };
+    let size = SIZE * display.scale;
+    if display.work.w < size + 2.0 * MARGIN * display.scale || display.work.h < size + 2.0 * MARGIN * display.scale { return false; }
+    let target = (
+        display.work.x + x.clamp(0.0, 1.0) * (display.work.w - size).max(0.0),
+        display.work.y + y.clamp(0.0, 1.0) * (display.work.h - size).max(0.0),
+    );
+    let clamped = logic::clamp_origin(target, size, display.work, MARGIN * display.scale);
+    place(&app, &d, clamped);
+    true
+}
+
 /// Linux: the page's drag ended with the top-left corner at (`x`, `y`), in the
 /// mode's space. On Windows the poll sees the release itself.
 #[tauri::command]
@@ -989,7 +1013,7 @@ mod tests {
         let zone = home_zone(960.0, 0.0, 1.5);
         assert!(zone.contains((960.0, 10.0)), "on the island");
         assert!(zone.contains((960.0 - 359.0 * 1.5, 300.0 * 1.5)), "inside the panel");
-        assert!(!zone.contains((960.0, 330.0 * 1.5)), "below the panel");
+        assert!(!zone.contains((960.0, 449.0 * 1.5)), "below the panel");
         assert!(!zone.contains((100.0, 10.0)), "top-left corner of the screen");
     }
 

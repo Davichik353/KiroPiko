@@ -18,6 +18,19 @@ afterEach(() => mock.timers.reset());
 
 const seconds = (n) => mock.timers.tick(n * 1000);
 
+test("KiroPiko keeps expanded and compact views until explicit dismissal", () => {
+  fsm.autoDismiss = false;
+  fsm.forceHome();
+  fsm.mouseLeft();
+  seconds(600);
+  assert.equal(fsm.state, "home");
+  assert.equal(fsm.homeCollapseDueAt, null);
+  fsm.forcePetit();
+  fsm.mouseLeft();
+  seconds(600);
+  assert.equal(fsm.state, "petit");
+});
+
 test("starts hidden and opens on the greeting at launch", () => {
   assert.equal(fsm.state, "hidden");
   fsm.launch();

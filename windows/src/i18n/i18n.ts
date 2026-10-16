@@ -155,7 +155,11 @@ export function t(key: string, vars?: Vars): string {
   if (typeof found === "string") text = found;
   else if (found) text = pickPlural(found, current, Number(vars?.count ?? 0)) ?? key;
   else text = key;
-  return interpolate(text, vars);
+  // Keep upstream translation keys and literal paths compatible, while using
+  // our product/character names. User-supplied interpolation values stay intact.
+  const branded = text.replace(/(?<![\\/])\bCoucou\b(?![\\/]| for Android)/g, "KiroPiko")
+    .replace(/\bMochi\b/g, current === "ru" ? "Киро" : "Kiro");
+  return interpolate(branded, vars);
 }
 
 /**

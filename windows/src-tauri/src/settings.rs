@@ -13,6 +13,14 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
+    pub nova_capsule_width: f64,
+    pub nova_do_not_disturb: bool,
+    pub nova_quiet_fullscreen: bool,
+    pub nova_character_scale: f64,
+    pub nova_onboarding_done: bool,
+    pub nova_autoplay: bool,
+    pub nova_allow_microphone: bool,
+    pub nova_allow_screen_capture: bool,
     pub sound_enabled: bool,
     pub sound_volume: f64,
     pub auto_close_interval: f64,
@@ -123,6 +131,14 @@ fn default_model() -> String {
 impl Default for Settings {
     fn default() -> Self {
         Self {
+            nova_capsule_width: 304.0,
+            nova_do_not_disturb: false,
+            nova_quiet_fullscreen: true,
+            nova_character_scale: 1.0,
+            nova_onboarding_done: false,
+            nova_autoplay: true,
+            nova_allow_microphone: false,
+            nova_allow_screen_capture: false,
             sound_enabled: true,
             sound_volume: 0.12,
             auto_close_interval: 15.0,
@@ -415,6 +431,14 @@ mod tests {
     /// A settings.json in which no value is the default one.
     // Two #: the colours in it are written "#RRGGBB".
     const CUSTOM: &str = r##"{
+  "novaCapsuleWidth": 304.0,
+  "novaDoNotDisturb": false,
+  "novaQuietFullscreen": true,
+  "novaCharacterScale": 0.85,
+  "novaOnboardingDone": true,
+  "novaAutoplay": false,
+  "novaAllowMicrophone": true,
+  "novaAllowScreenCapture": true,
   "soundEnabled": false,
   "soundVolume": 0.5,
   "autoCloseInterval": 30.0,
@@ -922,6 +946,14 @@ mod tests {
         assert_eq!(
             keys,
             [
+                "novaCapsuleWidth",
+                "novaDoNotDisturb",
+                "novaQuietFullscreen",
+                "novaCharacterScale",
+                "novaOnboardingDone",
+                "novaAutoplay",
+                "novaAllowMicrophone",
+                "novaAllowScreenCapture",
                 "soundEnabled",
                 "soundVolume",
                 "autoCloseInterval",

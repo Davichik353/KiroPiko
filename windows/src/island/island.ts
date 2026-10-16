@@ -4,8 +4,8 @@
 import { Tracked, Spring, clamp } from "../core/anim";
 import { Bridge, IS_TAURI, onDragDrop } from "../core/bridge";
 import {
-  EXPANDED_CORNER, EXPANDED_W, NOTCH_W, PANEL_H, PANEL_W,
-  ROUNDED_CORNER, VIEW_LAYOUTS, botGlowColor, botGlowOpacity, botPosition, chatPromptHeight,
+  EXPANDED_CORNER, EXPANDED_W, NOTCH_W, PANEL_H, PANEL_W, NOVA_TOP,
+  ROUNDED_CORNER, VIEW_LAYOUTS, botPosition, chatPromptHeight,
   islandSize,
   QUESTION_PICKER_H,
   type BotEmoteName, type IslandMode, type IslandViewName,
@@ -13,9 +13,10 @@ import {
 import { Sound } from "../core/sound";
 import { State } from "../core/state";
 import { SPOTIFY_ID, islandDances } from "../core/spotify";
-import { BotEngine, hexToRGB } from "../mochi/engine";
-import { Greeting } from "../mochi/greeting";
-import { createMiniBot, pruneMiniBots, syncMiniBotStates, tickMiniBots } from "../mochi/minibots";
+import { hexToRGB } from "../mochi/engine";
+import { NovaCharacter as BotEngine } from "../nova/character/adapter";
+import { NovaGreeting as Greeting } from "../nova/character/greeting";
+import { syncMiniBotStates, tickMiniBots } from "../mochi/minibots";
 import { SeasonCache, parseOutfit } from "../mochi/wardrobe";
 import { UploadCanvas } from "../upload/canvas";
 import { USC, UploadSeq } from "../upload/sequence";
@@ -115,6 +116,7 @@ export class Island {
 
   constructor(root: HTMLElement) {
     this.root = root;
+    this.fsm.autoDismiss = false;
     this.desktop = new DesktopLink({
       reveal: () => this.reveal(),
       wardrobeFromDesktop: () => this.wardrobeFromDesktop(),
@@ -269,6 +271,7 @@ export class Island {
     // The drop sequence draws the card, the bar and its own Mochi. It sits under
     // the header, which stays visible on top of it exactly as on macOS.
     this.uploadCanvas = new UploadCanvas({
+      mail: () => this.setView("mail"),
       ask: () => {
         State.promptContext = State.droppedFile
           ? { kind: "file", name: State.droppedFile.name, path: State.droppedFile.path }
@@ -309,7 +312,7 @@ export class Island {
 
   private wireFsm() {
     this.fsm.homeToPetitDelay = State.settings.autoCloseInterval;
-    this.fsm.openOnHover = State.settings.openOnHover;
+    this.fsm.openOnHover = State.settings.openOnHover && !State.novaQuietActive;
     this.fsm.onTransition = (from, to) => {
       // The greeting is over, however it ended: back to his desktop spot.
       if (from === "coucou" && to !== "coucou") this.desktop.launch();
@@ -394,15 +397,17 @@ export class Island {
   setView(view: IslandViewName) {
     this.stopSequenceIfLeaving(view);
     if (view !== "overview") closePlanCard();
-    if (State.mode !== "expanded") {
+    if (State.mode !== "expanded" || this.fsm.state === "coucou") {
       this.fsm.forceHome();
       State.view = view;
+      this.fsm.pinned = State.isPinned || view === "onboarding";
       this.animateGeometry(false);
       State.notify();
       return;
     }
     const grew = VIEW_LAYOUTS[view].height >= VIEW_LAYOUTS[State.view].height;
     State.view = view;
+    this.fsm.pinned = State.isPinned || view === "onboarding";
     State.lastActivity = performance.now();
     this.animateGeometry(!grew);
     State.notify();
@@ -423,7 +428,8 @@ export class Island {
   }
 
   /** Alert from the hook server: open on this view. Pinned alerts never auto-close. */
-  alert(view: IslandViewName) {
+  alert(view: IslandViewName, explicit = false) {
+    if (State.novaQuietActive && !explicit) { State.notify(); return; }
     this.fsm.pinned = State.isPinned;
     this.fsm.forceHome();
     this.expand(view);
@@ -534,10 +540,10 @@ export class Island {
         if (State.fileDragOver) return;
         State.fileDragOver = true;
         this.engine.animateMorph(1);
-        // enterZone must run before the island expands, so the sequence is
-        // already active by the time the view becomes `upload`.
+        // Opening from compact first visits the default view, which deactivates
+        // a previous sequence. Start only after that transition has completed.
+        this.alert("upload", true);
         UploadSeq.enterZone(State.mouseInIsland.x, State.mouseInIsland.y);
-        this.alert("upload");
         break;
       }
       case "leave": {
@@ -645,10 +651,13 @@ export class Island {
 
   private targetSize(): { w: number; h: number; r: number } {
     let { w, h } = islandSize(State.mode, State.view, State.chatHistory.length);
+    if (State.mode === "compact" && Number.isFinite(State.settings.novaCapsuleWidth)) w = Math.max(260, Math.min(420, State.settings.novaCapsuleWidth));
     if (State.mode === "expanded" && State.view === "question" && State.pendingApproval?.questions) {
       h = QUESTION_PICKER_H;
     }
     const r = State.mode === "expanded" ? EXPANDED_CORNER : ROUNDED_CORNER;
+    w = Math.min(w, Math.max(1, window.innerWidth - 16));
+    h = Math.min(h, Math.max(1, window.innerHeight - NOVA_TOP - 8));
     return { w, h, r };
   }
 
@@ -672,16 +681,18 @@ export class Island {
     const r = this.radius.value;
     this.islandEl.style.width = `${w}px`;
     this.islandEl.style.height = `${hh}px`;
-    this.islandEl.style.borderRadius = `0 0 ${r}px ${r}px`;
+    this.islandEl.style.visibility = State.mode === "hidden" && hh < 1 ? "hidden" : "visible";
+    this.islandEl.style.borderRadius = `${r}px`;
+    this.islandEl.style.top = `${NOVA_TOP}px`;
     this.islandEl.style.transform = `translateX(-50%)`;
     // These follow the island as it resizes, so they belong here rather than in
     // the state-driven DOM sync.
-    this.miniGrid.style.left = `${w - 40 - 14.5}px`;
-    this.miniGrid.style.top = `${hh / 2 - 14.5}px`;
+    this.miniGrid.style.left = "18px";
+    this.miniGrid.style.top = `${hh / 2 - 7}px`;
     this.greetingCanvas.style.left = `${(w - EXPANDED_W) / 2}px`;
     this.uploadCanvas.el.style.left = `${(w - EXPANDED_W) / 2}px`;
 
-    const rect = { x: (PANEL_W - w) / 2, y: 0, w, h: hh };
+    const rect = { x: (window.innerWidth - w) / 2, y: 0, w, h: hh + NOVA_TOP };
     const p = this.pushedRect;
     if (Math.abs(p.x - rect.x) > 0.5 || Math.abs(p.w - rect.w) > 0.5 || Math.abs(p.h - rect.h) > 0.5) {
       this.pushedRect = rect;
@@ -693,7 +704,8 @@ export class Island {
   private islandRect(): { x: number; y: number; w: number; h: number } {
     const w = this.width.value;
     const hh = this.height.value;
-    return { x: (PANEL_W - w) / 2, y: 0, w, h: hh };
+    const panelWidth = window.innerWidth;
+    return { x: (panelWidth - w) / 2, y: NOVA_TOP, w, h: hh };
   }
 
   // ── Window collapse (hidden → tiny wake strip, zero polling) ────────────────
@@ -722,10 +734,28 @@ export class Island {
   // ── Input ───────────────────────────────────────────────────────────────────
 
   private wireInput() {
+    // The compact companion is drawn above the pill, outside its DOM bounds.
+    window.addEventListener("mousedown", (event) => {
+      if (event.target instanceof Node && this.islandEl.contains(event.target)) return;
+      if (!this.isBotHit(event.clientX, event.clientY)) return;
+      Sound.resume();
+      this.fsm.userInteracted();
+      if (event.button === 2) { this.toggleWardrobe(); return; }
+      if (event.button === 0) {
+        this.botPress = { x: event.clientX, y: event.clientY };
+        if (State.mode === "compact") this.setView(State.pendingApproval ? State.defaultView() : "music");
+      }
+    });
+    window.addEventListener("contextmenu", (event) => { if (this.isBotHit(event.clientX, event.clientY)) event.preventDefault(); });
     // The wake strip is the only thing the OS can hit while the island is hidden.
     this.wakeStrip.addEventListener("mouseenter", () => {
       Sound.resume();
       if (State.mode === "hidden") this.fsm.mouseEntered();
+    });
+    this.islandEl.addEventListener("click", (event) => {
+      if ((event.target as Element).closest("button, input, textarea, a, .pill")) return;
+      if (State.mode === "compact") this.setView(State.pendingApproval ? State.defaultView() : "music");
+      else if (!State.pendingApproval && (State.view === "overview" || State.view === "empty")) this.setView("music");
     });
 
     this.islandEl.addEventListener("mousedown", (e) => {
@@ -745,6 +775,7 @@ export class Island {
       }
       if (State.mode !== "expanded") {
         this.fsm.click();
+        if (e.button === 0 && !State.pendingApproval) this.setView("music");
         return;
       }
       if (this.isBotHit(e.clientX, e.clientY)) {
@@ -793,7 +824,15 @@ export class Island {
       State.lastActivity = performance.now();
     });
 
+    window.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || State.mode !== "expanded") return;
+      if (event.target instanceof Node && this.islandEl.contains(event.target)) return;
+      if (this.isBotHit(event.clientX, event.clientY)) return;
+      this.collapse();
+    });
+
     void onDragDrop((e) => this.onDragDrop(e));
+    window.addEventListener("resize", () => this.animateGeometry(true));
 
     // Outside Tauri (plain browser) drive the cursor from DOM events so the
     // island can be inspected with `npm run dev`.
@@ -881,6 +920,7 @@ export class Island {
   }
 
   private isBotHit(x: number, y: number): boolean {
+    if (State.novaQuietActive) return false;
     // Out on the desktop, the island's Mochi is invisible: nothing to hit.
     if (State.mochiOnDesktop) return false;
     const rect = this.islandRect();
@@ -1014,6 +1054,7 @@ export class Island {
 
   private updateBotTargets() {
     const p = botPosition(State.mode, State.view, this.height.value, State.uploadProgress);
+    if (State.mode === "compact") { p.cx = this.width.value / 2; p.cy = -35; p.diameter = 44; }
     this.botCx.target = p.cx;
     this.botCy.target = p.cy;
     this.botSize.target = p.diameter / 0.6;
@@ -1022,31 +1063,20 @@ export class Island {
     // The drop canvas draws its own Mochi; two of them would overlap. Out on the
     // desktop, he isn't here at all.
     const away = State.mochiOnDesktop;
-    const visible = p.opacity > 0 && !greetingActive && !this.uploadActive && !away;
+    const visible = p.opacity > 0 && !greetingActive && !this.uploadActive && !away && !State.novaQuietActive;
     this.botCanvas.style.opacity = visible ? "1" : "0";
 
-    if (State.mode === "expanded" && State.view !== "uploading" && !greetingActive && !this.uploadActive && !away) {
-      const d = p.diameter;
-      const color = botGlowColor(State.effectiveState);
-      this.botGlow.style.display = "block";
-      this.botGlow.style.width = `${d * 2.2}px`;
-      this.botGlow.style.height = `${d * 2.2}px`;
-      this.botGlow.style.left = `${this.botCx.value - d * 1.1}px`;
-      this.botGlow.style.top = `${this.botCy.value - d * 1.1}px`;
-      this.botGlow.style.background = `radial-gradient(circle, ${color} 0%, transparent 62%)`;
-      this.botGlow.style.opacity = String(botGlowOpacity(State.effectiveState));
-    } else {
-      this.botGlow.style.display = "none";
-    }
+    this.botGlow.style.display = "none";
   }
 
   private drawBot(dt: number) {
     const size = this.botSize.value;
     const w = Math.max(1, Math.round(size));
-    const hCss = w + BOT_OVERHANG;
+    const compact = State.mode === "compact";
+    const hCss = compact ? 72 : w + BOT_OVERHANG;
     const wCss = w + BOT_SIDE * 2;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    if (this.canvasPx !== w) {
+    if (this.canvasPx !== w || this.botCanvas.height !== Math.round(hCss * dpr)) {
       this.canvasPx = w;
       this.botCanvas.width = Math.round(wCss * dpr);
       this.botCanvas.height = Math.round(hCss * dpr);
@@ -1054,12 +1084,13 @@ export class Island {
       this.botCanvas.style.height = `${hCss}px`;
     }
     this.botCanvas.style.left = `${this.botCx.value - wCss / 2}px`;
-    this.botCanvas.style.top = `${this.botCy.value - BOT_OVERHANG / 2 - hCss / 2}px`;
+    this.botCanvas.style.top = compact ? `${-hCss + 2}px` : `${this.botCy.value - BOT_OVERHANG / 2 - hCss / 2}px`;
 
     const ctx = this.botCanvas.getContext("2d");
     if (!ctx) return;
 
     const focus = State.focusTask;
+    this.engine.serviceId = State.mode === "expanded" && State.view === "overview" ? focus?.id ?? null : null;
     // While a plan card is open Mochi wears the plan's colour, like its pill.
     this.engine.bodyColor = planCardOpen()
       ? hexToRGB(openPlanColor())
@@ -1098,6 +1129,7 @@ export class Island {
     }));
 
     this.engine.update(dt);
+    this.engine.peeking = State.mode === "compact";
     ctx.setTransform(dpr, 0, 0, dpr, BOT_SIDE * dpr, 0);
     ctx.clearRect(-BOT_SIDE, 0, wCss, hCss);
     ctx.save();
@@ -1156,17 +1188,20 @@ export class Island {
     for (const [name, view] of this.views) {
       const on = name === State.view;
       view.el.classList.toggle("on", on);
+      view.el.setAttribute("aria-hidden", String(!on || !expanded));
+      view.el.inert = !on || !expanded;
       if (on) view.sync();
     }
 
     // The chat is the only view with a text field, so it is the only time the
     // island is allowed to take keyboard focus.
     if (this.lastSyncedView !== State.view) {
-      const wasChat = this.lastSyncedView === "prompt";
+      const wasChat = this.lastSyncedView === "prompt" || this.lastSyncedView === "mail";
       this.lastSyncedView = State.view;
-      if (State.view === "prompt") {
+      if (State.view === "prompt" || State.view === "mail") {
         void Bridge.focusWindow(true);
-        window.setTimeout(() => this.views.get("prompt")?.focus?.(), 120);
+        const editingView = State.view;
+        window.setTimeout(() => { if (State.mode === "expanded" && State.view === editingView) this.views.get(editingView)?.focus?.(); }, 120);
       } else if (wasChat) {
         void Bridge.focusWindow(false);
       }
@@ -1176,16 +1211,9 @@ export class Island {
     const showGrid = State.mode === "compact";
     this.miniGrid.style.opacity = showGrid ? "1" : "0";
     if (showGrid) {
-      const others = State.otherTasks.slice(0, 4);
-      const key = others.map((t) => t.id).join("|");
-      if (this.miniGrid.dataset.key !== key) {
-        this.miniGrid.dataset.key = key;
-        this.miniGrid.replaceChildren();
-        for (const t of others) {
-          this.miniGrid.append(createMiniBot(t, 13));
-        }
-        pruneMiniBots();
-      }
+      const task = State.tasks.find(task => !task.isIntegration && task.state !== "idle");
+      this.miniGrid.dataset.state = task?.state ?? "idle";
+      this.miniGrid.textContent = State.novaQuietActive ? "Не мешать · запросы сохранены" : State.pendingApproval ? "Нужно ваше разрешение" : task?.state === "finished" ? "Задача выполнена" : task?.state === "error" ? "Ошибка · откройте детали" : task ? `${task.name} работает…` : State.novaPhrase || "Киро рядом";
     }
 
     syncMiniBotStates(State.tasks);
@@ -1194,10 +1222,11 @@ export class Island {
 
   /** Applies settings coming from Rust at boot. */
   applySettings() {
-    Sound.setEnabled(State.settings.soundEnabled);
+    Sound.setEnabled(State.settings.soundEnabled && !State.novaQuietActive);
     Sound.setVolume(State.settings.soundVolume);
     this.fsm.homeToPetitDelay = State.settings.autoCloseInterval;
     this.fsm.openOnHover = State.settings.openOnHover;
+    this.animateGeometry(true);
     State.notify();
   }
 

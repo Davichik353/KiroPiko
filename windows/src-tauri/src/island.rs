@@ -16,7 +16,7 @@ use crate::platform::{self, cursor_physical, left_button_down};
 
 /// Logical size of the full window — the largest island view, like the macOS panel.
 pub const PANEL_W: f64 = 720.0;
-pub const PANEL_H: f64 = 320.0;
+pub const PANEL_H: f64 = 448.0;
 /// Logical size of the invisible strip that wakes the island when it is hidden.
 pub const STRIP_W: f64 = 240.0;
 pub const STRIP_H: f64 = 6.0;
@@ -308,8 +308,8 @@ pub fn apply_geometry(app: &AppHandle, pref: &str, collapsed: bool) {
     let ms = *m.size();
 
     let (lw, lh) = if collapsed { (STRIP_W, STRIP_H) } else { (PANEL_W, PANEL_H) };
-    let pw = (lw * scale).round().max(1.0) as u32;
-    let ph = (lh * scale).round().max(1.0) as u32;
+    let pw = ((lw * scale).round().max(1.0) as u32).min(ms.width.max(1));
+    let ph = ((lh * scale).round().max(1.0) as u32).min(ms.height.max(1));
     let x = mp.x + (ms.width as i32 - pw as i32) / 2;
     let y = mp.y;
 
@@ -388,7 +388,7 @@ pub fn spawn_cursor_poll(app: AppHandle, gate: Arc<PollGate>) {
                     Ok(s) => (s.width as f64 / scale, s.height as f64 / scale),
                     Err(_) => (PANEL_W, PANEL_H),
                 };
-                if (x - last.0).abs() < 1.0 && (y - last.1).abs() < 1.0 {
+                if (x - last.0).abs() < 1.0 && (y - last.1).abs() < 1.0 && left_button_down() == was_down {
                     continue;
                 }
                 last = (x, y);
@@ -413,6 +413,9 @@ pub fn spawn_cursor_poll(app: AppHandle, gate: Arc<PollGate>) {
                 // A press may be the start of a drag: make sure the drop target is
                 // ours before the file arrives.
                 let down = left_button_down();
+                if down && !was_down && !on_island {
+                    let _ = win.emit("outside-click", ());
+                }
                 if down && !was_down {
                     let handle = app.clone();
                     let _ = app.run_on_main_thread(move || platform::unblock_webview_drops(&handle));

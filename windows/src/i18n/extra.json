@@ -1981,17 +1981,6 @@
    "ru": "Отправить сообщение",
    "id": "Kirim pesan"
   },
-  "Sending by email isn't in this version.": {
-   "zh-Hans": "此版本暂不支持通过邮件发送。",
-   "hi": "ईमेल से भेजना इस संस्करण में नहीं है।",
-   "es": "El envío por correo no está en esta versión.",
-   "ar": "الإرسال بالبريد الإلكتروني غير متاح في هذا الإصدار.",
-   "fr": "L'envoi par e-mail n'est pas dans cette version.",
-   "bn": "ইমেলে পাঠানো এই সংস্করণে নেই।",
-   "pt-BR": "O envio por e-mail não está nesta versão.",
-   "ru": "Отправки по почте в этой версии нет.",
-   "id": "Mengirim lewat email belum ada di versi ini."
-  },
   "Services": {
    "zh-Hans": "服务",
    "hi": "सेवाएँ",
@@ -3899,6 +3888,18 @@
    "pt-BR": "Este código também inclui a chave de acesso e a chave de ponta a ponta do relay {host}. «Parear de novo» cria uma chave e uma sala novas.",
    "ru": "Этот код также содержит ключ доступа и сквозной ключ для ретранслятора {host}. «Сопрячь заново» создаёт новый ключ и новую комнату.",
    "id": "Kode ini juga memuat kunci akses dan kunci ujung ke ujung untuk relay {host}. «Sandingkan ulang» membuat kunci dan ruang baru."
+  },
+  "Open KiroPiko": {
+   "en": "Open KiroPiko",
+   "zh-Hans": "打开 KiroPiko",
+   "hi": "KiroPiko खोलें",
+   "es": "Abrir KiroPiko",
+   "ar": "فتح KiroPiko",
+   "fr": "Ouvrir KiroPiko",
+   "bn": "KiroPiko খুলুন",
+   "pt-BR": "Abrir KiroPiko",
+   "ru": "Открыть KiroPiko",
+   "id": "Buka KiroPiko"
   }
  }
 }

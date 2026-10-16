@@ -6,7 +6,7 @@ import type { Settings } from "./state";
 import { N_ } from "../i18n/i18n";
 
 export type ProviderId =
-  | "anthropic" | "openai" | "google" | "openrouter"
+  | "anthropic" | "openai" | "google" | "openrouter" | "groq"
   | "ollama" | "lmstudio" | "custom";
 
 export interface ProviderDef {
@@ -25,9 +25,10 @@ export interface ProviderDef {
 
 export const PROVIDERS: readonly ProviderDef[] = [
   { id: "anthropic", name: "Anthropic", accent: "#E07950", key: "anthropic-api-key", urlField: null, defaultModel: "claude-opus-5", prefer: "opus" },
-  { id: "google", name: "Google", accent: "#4285F4", key: "google-api-key", urlField: null, defaultModel: "gemini-2.0-flash", prefer: "flash" },
+  { id: "google", name: "Google", accent: "#4285F4", key: "google-api-key", urlField: null, defaultModel: "gemini-3.8-flash", prefer: "flash" },
   { id: "openai", name: "OpenAI", accent: "#10A37F", key: "openai-api-key", urlField: null, defaultModel: "gpt-4o", prefer: "mini" },
   { id: "openrouter", name: "OpenRouter", accent: "#6467F2", key: "openrouter-api-key", urlField: null, defaultModel: "openrouter/auto", prefer: null },
+  { id: "groq", name: "Groq", accent: "#F55036", key: "groq-api-key", urlField: null, defaultModel: "openai/gpt-oss-20b", prefer: "gpt-oss-20b" },
   { id: "ollama", name: "Ollama", accent: "#FACC15", key: null, urlField: "ollamaUrl", defaultModel: "", prefer: null },
   { id: "lmstudio", name: "LM Studio", accent: "#A3E635", key: null, urlField: "lmstudioUrl", defaultModel: "", prefer: null },
   { id: "custom", name: N_("Custom server"), accent: "#C0C4CC", key: null, urlField: "customUrl", defaultModel: "", prefer: null },

@@ -1,0 +1,98 @@
+:root { --nova-accent: #79dfbb; --nova-muted: #a4afad; }
+:root { --ink: #edf3f0; --ink-2: #dce7e2; --dim: #a4afad; --dim-2: #95a39c; --card: #171c1c; --card-flat: #101616; --tab-on: #20342e; }
+.nova-panel { scrollbar-width: thin; scrollbar-color: #47564f transparent; }
+.kiro-toolbox { display: flex; flex-direction: column; gap: 10px; }
+.kiro-tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+.kiro-tool-link { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 0; text-align: left; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid #ffffff10; cursor: pointer; }
+.kiro-tool-link > span:first-child, .kiro-pet-row > span { display: flex; flex-direction: column; gap: 4px; }
+.kiro-tool-link strong, .kiro-pet-row strong { font-size: 12px; font-weight: 600; }
+.kiro-tool-link small, .kiro-pet-row small { font-size: 10px; color: var(--nova-muted); }
+.kiro-tool-link > span:last-child { color: var(--nova-accent); font-size: 17px; }
+.kiro-tool-link:hover { color: #a8edd4; }
+.kiro-tool-detail { border-bottom: 1px solid #ffffff10; padding: 3px 0 10px; }
+.kiro-tool-detail summary { font-size: 12px; cursor: pointer; color: #dce7e2; padding: 4px 0; }
+.kiro-tool-detail-body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 8px; }
+.kiro-tool-detail-body p { font-size: 11px; line-height: 1.5; color: var(--nova-muted); }
+.kiro-tool-detail-body .nova-footer { margin: 0; flex-wrap: wrap; }
+.kiro-pet-row { display: flex; align-items: center; gap: 12px; }
+.kiro-pet-row > span { flex: 1; }
+.kiro-tool-bottom { display: flex; justify-content: space-between; padding-top: 5px; font-size: 10px; }
+.nova-panel .link-btn { color: #a8edd4; }
+.nova-panel form input, .nova-panel form textarea { width: 100%; background: #101616; border: 1px solid #ffffff24; border-radius: 7px; padding: 7px 9px; color: var(--ink); font: 11px/1.4 var(--font); user-select: text; }
+.nova-panel form input::placeholder, .nova-panel form textarea::placeholder { color: #a4afad; }
+.nova-panel form small { color: var(--nova-muted); font-size: 10px; line-height: 1.4; }
+textarea:focus-visible, summary:focus-visible { outline: 2px solid #a8edd4; outline-offset: 2px; }
+#nova-notice { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); width: min(600px, calc(100vw - 32px)); padding: 14px 18px; color: #e2ebe8; background: #202727; border: 1px solid #79dfbb80; border-radius: 12px; box-shadow: 0 8px 30px #0007; font: 13px/1.5 "Segoe UI", sans-serif; z-index: 100; }
+#island { background: linear-gradient(150deg, #131818, #0b1010); border: 1px solid #ffffff20; box-shadow: 0 12px 35px #0005; }
+.nova-wordmark { font-size: 10px; font-weight: 800; letter-spacing: 1.7px; color: #e2ebe8; align-self: center; margin-right: 6px; }
+.pill .mini { margin-right: 3px; }
+.pill .mini canvas { width: 44px !important; height: 44px !important; }
+.int-actions { gap: 12px; }
+.int-actions .link-btn { line-height: 1.3; }
+#mini-grid { display: flex; align-items: center; width: calc(100% - 36px); height: 14px; gap: 8px; font-size: 11px; line-height: 14px; color: #c4cfcc; max-width: 252px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#mini-grid::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #79dfbb; flex-shrink: 0; }
+#mini-grid[data-state="finished"]::before { background: #4dd89b; }
+#mini-grid[data-state="error"]::before { background: #fc7e86; }
+.nova-tab { font: 600 10px "Segoe UI", sans-serif; }
+.nova-speech-btn { border: 1px solid #79dfbb40; background: #20342e; color: #a8edd4; border-radius: 8px; padding: 4px 8px; font-size: 10px; margin-left: 5px; }
+.nova-speech-btn:disabled { opacity: .4; }
+.tab.on { background: #79dfbb30; color: #a8edd4; }
+.btn.primary { background: #79dfbb; color: #10231c; border: 1px solid #79dfbb80; }
+.btn.primary:hover { background: #94e8ca; }
+button:focus-visible, input:focus-visible { outline: 2px solid #a8edd4; outline-offset: 2px; }
+.nova-view { padding-left: 80px; }
+.nova-panel { height: 100%; padding: 10px 14px; background: #171c1c; border: 1px solid #ffffff10; border-radius: 14px; overflow-y: auto; }
+.nova-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.nova-heading strong { font-size: 15px; }
+.nova-heading span { font-size: 8px; letter-spacing: .7px; color: #a4afad; }
+.nova-status { color: #a4afad; font-size: 11px; margin-bottom: 10px; }
+.nova-readings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+.nova-metric { display: flex; flex-direction: column; gap: 5px; background: #202727; border-radius: 9px; padding: 9px; }
+.nova-metric strong { font-size: 17px; }
+.nova-metric small { font-size: 9px; color: #a4afad; }
+.nova-findings { max-height: 86px; overflow: auto; }
+.nova-finding, .nova-disk, .nova-tools p, .nova-empty { font-size: 11px; line-height: 1.55; margin-bottom: 6px; color: #c4cfcc; }
+.nova-finding.warning { color: #ffd08b; }
+.nova-footer { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.nova-footer small { color: #a4afad; font-size: 9px; max-width: 185px; }
+.nova-session-list { display: flex; flex-direction: column; gap: 8px; }
+.nova-session { text-align: left; background: #202727; color: #e2ebe8; border: 1px solid #ffffff0c; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.nova-session:hover { border-color: #79dfbb; }
+.nova-session-title { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+.nova-session small { font-size: 10px; color: #a4afad; }
+.nova-session-step { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nova-tools { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.nova-tools strong { font-size: 12px; }
+.nova-tools p { margin: 0; }
+.nova-wrap { flex-wrap: wrap; }
+.nova-session-list { margin-top: 10px; }
+.nova-report { font: 10px/1.5 monospace; white-space: pre-wrap; max-height: 140px; overflow-y: auto; background: #101616; border-radius: 8px; padding: 10px; user-select: text; }
+.nova-music { display: flex; flex-direction: column; gap: 7px; }
+.nova-music-source { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.nova-music-source .link-btn { color: #a8edd4; }
+.nova-equalizer { height: 42px; display: flex; justify-content: center; align-items: center; gap: 5px; overflow: hidden; }
+.nova-equalizer i { width: 5px; height: 36px; border-radius: 4px; background: linear-gradient(#a8edd4, #79dfbb); transform: scaleY(.3); animation: nova-bar var(--bar-duration) ease-in-out var(--bar-delay) infinite alternate; }
+.nova-view[aria-hidden="true"] .nova-equalizer i { animation-play-state: paused; }
+.nova-equalizer.paused i { animation: none; transform: scaleY(.18); }
+.nova-music-controls, .nova-music-volume { display: flex; justify-content: center; align-items: center; gap: 20px; }
+.nova-music-volume { gap: 16px; }
+.nova-music-button { display: grid; place-items: center; width: 32px; height: 30px; border-radius: 50%; background: #ffffff08; color: #e2ebe8; border: 1px solid #ffffff10; }
+.nova-music-button.main { width: 42px; height: 42px; background: #79dfbb; color: #10231c; }
+.nova-music-button:hover { background: #79dfbb40; }
+.nova-music-button:disabled { opacity: .5; }
+.nova-music small { color: #a4afad; font-size: 9px; line-height: 1.4; }
+.nova-music .nova-status { margin: 0; }
+.nova-music-progress { display: flex; align-items: center; gap: 8px; color: #a4afad; font-size: 10px; }
+.nova-music-progress input { flex: 1; min-width: 0; accent-color: #79dfbb; }
+.nova-music-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; font-size: 10px; }
+.nova-music-links button { color: #a8edd4; }
+.nova-music-hero { display: flex; align-items: center; gap: 14px; }
+.nova-music-hero > div:last-child { flex: 1; min-width: 0; }
+.nova-music-art { width: 60px; height: 60px; flex: 0 0 60px; border-radius: 10px; background: #79dfbb18; color: #a8edd4; position: relative; display: grid; place-items: center; overflow: hidden; }
+.nova-music-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.nova-music-button[aria-pressed="true"] { color: #a8edd4; border-color: #79dfbb; background: #79dfbb20; }
+@keyframes nova-bar { from { transform: scaleY(.18); } to { transform: scaleY(.95); } }
+@media (prefers-reduced-motion: reduce) { .nova-equalizer i { animation: none; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; } }
+#bot-canvas { transition: opacity .4s ease; }
+#island-clip { border-color: var(--kiro-music-accent, rgba(128, 184, 164, .18)); transition: border-color 1s ease; }

@@ -29,6 +29,8 @@ export class IslandStateMachine {
   greetHoverCollapseDelay = 10;
   /** An alert waiting for an answer stays open, even when the mouse leaves. */
   pinned = false;
+  /** KiroPiko stays visible until explicitly dismissed. */
+  autoDismiss = true;
   /**
    * Hovering opens the island all the way instead of peeking (Settings →
    * General → Open on hover, off by default), as IslandStateMachine.openOnHover.
@@ -158,6 +160,7 @@ export class IslandStateMachine {
 
   private schedulePetitHide() {
     this.clear("petitHide");
+    if (!this.autoDismiss) return;
     // A card folded away while it waits for an answer keeps the compact island
     // on screen, so it can be reopened (isHeldOpen on macOS).
     if (this.pinned) return;
@@ -169,6 +172,7 @@ export class IslandStateMachine {
 
   private scheduleHomeCollapse() {
     this.clear("homeCollapse");
+    if (!this.autoDismiss) return;
     if (this.pinned) return;
     const ms = (this.byHover ? this.hoverCloseDelay : this.homeDelay) * 1000;
     this.homeCollapseDueAt = performance.now() + ms;

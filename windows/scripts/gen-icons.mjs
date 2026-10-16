@@ -182,7 +182,23 @@ function encodeICO(entries) {
 
 mkdirSync(OUT, { recursive: true });
 
-const png = (size) => encodePNG(size, renderMochi(size));
+function renderNova(size) {
+  const rgba = new Uint8Array(size * size * 4);
+  const segmentDistance = (x, y, ax, ay, bx, by) => {
+    const t = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / ((bx - ax) ** 2 + (by - ay) ** 2)));
+    return Math.hypot(x - ax - t * (bx - ax), y - ay - t * (by - ay));
+  };
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const u = (x + 0.5) / size, v = (y + 0.5) / size;
+    const corner = Math.hypot(Math.max(0, Math.abs(u - 0.5) - 0.29), Math.max(0, Math.abs(v - 0.5) - 0.29));
+    if (corner > 0.18) continue;
+    const ink = Math.min(segmentDistance(u,v,.3,.72,.3,.28), segmentDistance(u,v,.3,.51,.7,.28), segmentDistance(u,v,.3,.51,.7,.72)) < .052;
+    const c = ink ? [197, 155, 255] : [24, 21, 35];
+    rgba.set([...c, 255], (y * size + x) * 4);
+  }
+  return rgba;
+}
+const png = (size) => encodePNG(size, renderNova(size));
 
 const files = {
   "32x32.png": png(32),

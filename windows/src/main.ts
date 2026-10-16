@@ -1,6 +1,13 @@
 // Entry point: boot the bridge, wire the island, start the greeting.
 
 import "./style.css";
+import "./nova/nova.css";
+import { loadCharacter, loadExtraCharacters } from "./nova/character/sprites";
+import { readPreviewSettings } from "./nova/preview";
+import { Speech } from "./nova/voice/speech";
+import { Roaming } from "./nova/character/roaming";
+import { observeHistory } from "./nova/history/view";
+import { initCompanion } from "./nova/quiet";
 import { Bridge, IS_TAURI, onEvent } from "./core/bridge";
 import { Sound } from "./core/sound";
 import { State, type Settings } from "./core/state";
@@ -20,16 +27,21 @@ function applyLanguage() {
 }
 
 async function main() {
+  window.addEventListener("beforeunload", () => Speech.stop());
   const root = document.getElementById("root");
   if (!root) return;
 
   void Sound.preload();
+  await loadCharacter().catch((err: unknown) => console.error(err));
+  await loadExtraCharacters();
 
   const island = new Island(root);
 
   const boot = await Bridge.boot();
   if (boot) {
     State.settings = { ...State.settings, ...boot.settings };
+  } else if (!IS_TAURI) {
+    State.settings = { ...State.settings, ...readPreviewSettings() };
   }
   // A language change redraws the island in place: the texts given as tl(…)
   // relabel themselves (views/dom.ts) and the views redraw the rest on this
@@ -40,10 +52,22 @@ async function main() {
   void Bridge.setSystemLanguages(systemLanguages());
   island.applySettings();
   State.loadIntegrationTasks();
+  observeHistory();
+  window.addEventListener("storage", event => {
+    if (!IS_TAURI && event.key === "nova.preview.preferences.v1") {
+      State.settings = { ...State.settings, ...readPreviewSettings() };
+      island.applySettings(); State.notify();
+    }
+  });
   if (boot && !boot.cursorPoll) island.followPageCursor();
   await island.desktop.init();
+  Roaming.init(island.desktop, () => island.reveal());
+  initCompanion(island);
 
   await onEvent<{ x: number; y: number }>("cursor", ({ x, y }) => island.onCursor(x, y));
+  await onEvent<null>("outside-click", () => {
+    if (State.mode === "expanded") island.collapse();
+  });
   await onEvent<boolean>("pointer-inside", (inside) => island.setPointerInside(inside));
 
   /** Pause has to reach Rust too, or the pollers keep calling out. */
@@ -57,11 +81,11 @@ async function main() {
     switch (what) {
       case "settings":
         setPaused(false);
-        island.alert("settings");
+        island.alert("settings", true);
         break;
       case "open":
         setPaused(false);
-        island.alert(State.defaultView());
+        island.alert(State.defaultView(), true);
         break;
       case "recap":
         setPaused(false);
@@ -69,7 +93,7 @@ async function main() {
         break;
       case "wardrobe":
         setPaused(false);
-        island.alert("wardrobe");
+        island.alert("wardrobe", true);
         break;
       case "pause":
         setPaused(!State.paused);
@@ -109,12 +133,17 @@ async function main() {
   }
 
   // Monday recap: app start (greeting over), an agent starting work, waking up.
-  const checkRecap = () => void Recap.check(island);
-  island.onGreetingDone = checkRecap;
+  const checkRecap = () => { if (!State.novaQuietActive) void Recap.check(island); };
+  island.onGreetingDone = () => {
+    if (!State.novaQuietActive && !State.settings.novaOnboardingDone && !State.pendingApproval) island.setView("onboarding");
+    else checkRecap();
+  };
   island.onWake = checkRecap;
   await onEvent<null>("recap-check", checkRecap);
 
-  island.launch();
+  if (State.novaQuietActive) island.fsm.forcePetit();
+  else island.launch();
+  if (!State.novaQuietActive && !State.settings.novaOnboardingDone && !State.pendingApproval) island.setView("onboarding");
 
   // In a plain browser there is no wake strip behind the cursor: make the whole
   // page wake the island so the visuals can be checked with `npm run dev`.

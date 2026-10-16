@@ -1,6 +1,6 @@
 // Cloud providers that speak the OpenAI chat completions API: OpenAI, Google AI
 // (Gemini's OpenAI-compatible endpoint, as ClaudeService.swift uses it) and
-// OpenRouter. One table describes them; one client talks to all three.
+// OpenRouter and Groq. One table describes them; one client talks to all of them.
 //
 // Same contract as claude.rs: the key never leaves the credential store and
 // file bytes never cross the IPC boundary. Chat only — no tools are sent, so
@@ -33,6 +33,16 @@ pub struct Provider {
 
 pub const PROVIDERS: &[Provider] = &[
     Provider {
+        id: "groq",
+        name: "Groq",
+        base_url: "https://api.groq.com/openai/v1",
+        key: "groq-api-key",
+        models_path: "models",
+        default_model: "openai/gpt-oss-20b",
+        not_chat: &["whisper", "tts", "orpheus", "guard", "embed"],
+        max_tokens_field: "max_completion_tokens",
+    },
+    Provider {
         id: "openai",
         name: "OpenAI",
         base_url: "https://api.openai.com/v1",
@@ -51,7 +61,7 @@ pub const PROVIDERS: &[Provider] = &[
         base_url: "https://generativelanguage.googleapis.com/v1beta/openai",
         key: "google-api-key",
         models_path: "models",
-        default_model: "gemini-2.0-flash",
+        default_model: "gemini-3.8-flash",
         not_chat: &["embed", "imagen", "veo", "aqa", "tts", "audio", "live"],
         max_tokens_field: "max_tokens",
     },
@@ -213,6 +223,7 @@ fn parse_models(p: &Provider, json: &Value) -> Vec<ModelInfo> {
     let items = json.get("data").and_then(Value::as_array).cloned().unwrap_or_default();
     let mut models: Vec<(ModelInfo, i64, bool)> = items
         .iter()
+        .filter(|m| p.id != "groq" || m.get("active").and_then(Value::as_bool) != Some(false))
         .filter(|m| {
             // OpenRouter lists image and audio generators too.
             m.pointer("/architecture/output_modalities")
@@ -394,13 +405,13 @@ mod tests {
         assert_eq!(ids, vec!["gpt-5-mini", "gpt-4o"]);
 
         let google = json!({"data":[
-            {"id":"models/gemini-2.0-flash"},
+            {"id":"models/gemini-3.8-flash"},
             {"id":"models/text-embedding-004"},
             {"id":"gemini-2.5-pro"},
             {"id":"models/imagen-3.0"}
         ]});
         let ids: Vec<_> = parse_models(p("google"), &google).into_iter().map(|m| m.id).collect();
-        assert_eq!(ids, vec!["gemini-2.0-flash", "gemini-2.5-pro"]);
+        assert_eq!(ids, vec!["gemini-3.8-flash", "gemini-2.5-pro"]);
 
         let openrouter = json!({"data":[
             {"id":"b/paid","name":"B Paid","pricing":{"prompt":"0.000001","completion":"0.000002"}},
@@ -411,6 +422,24 @@ mod tests {
         let models = parse_models(p("openrouter"), &openrouter);
         let labels: Vec<_> = models.iter().map(|m| m.label.as_str()).collect();
         assert_eq!(labels, vec!["A (free)", "C Zero (free)", "B Paid"]);
+    }
+
+    #[test]
+    fn groq_uses_its_own_endpoint_key_and_only_active_chat_models() {
+        let groq = p("groq");
+        assert_eq!(groq.key, "groq-api-key");
+        assert_eq!(url(groq, "models").unwrap().as_str(), "https://api.groq.com/openai/v1/models");
+        assert_eq!(url(groq, "chat/completions").unwrap().as_str(), "https://api.groq.com/openai/v1/chat/completions");
+        let models = parse_models(groq, &json!({"data":[
+            {"id":"openai/gpt-oss-20b", "active":true},
+            {"id":"whisper-large-v3", "active":true},
+            {"id":"canopylabs/orpheus-v1-english", "active":true},
+            {"id":"retired-chat", "active":false}
+        ]}));
+        assert_eq!(models.iter().map(|m| m.id.as_str()).collect::<Vec<_>>(), vec!["openai/gpt-oss-20b"]);
+        let body = request_body(groq, groq.default_model, "system", &[], &json!({"role":"user","content":"hello"}));
+        assert_eq!(body["max_completion_tokens"], 4096);
+        assert!(body.get("max_tokens").is_none());
     }
 
     #[test]

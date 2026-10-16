@@ -276,6 +276,9 @@ class UploadSequence {
   exitZone() {}
 
   performDrop(uploadDuration: number) {
+    // A compact→expanded transition or a missing dragenter may have reset us.
+    // A real drop must always own a live timeline, otherwise progress stays 0.
+    if (!this.isActive) this.enterZone(this.cursorX, this.cursorY);
     this.uploadDuration = uploadDuration;
     this.dropWall = this.now();
     // Restart the canonical post-drop timeline however long the user hovered.

@@ -43,7 +43,7 @@ test("the model button shows the active provider's model", () => {
   assert.equal($(".model-name").textContent, "claude-opus-5");
   State.settings = { ...State.settings, chatProvider: "google" };
   view.sync();
-  assert.equal($(".model-name").textContent, "gemini-2.0-flash");
+  assert.equal($(".model-name").textContent, "gemini-3.8-flash");
   State.settings = { ...State.settings, chatProvider: "ollama" };
   view.sync();
   assert.equal($(".model-name").textContent, "Choose a model");
@@ -54,7 +54,7 @@ test("a provider without a key is never asked for its models", async () => {
   $(".model-btn").fire("click");
   await flush();
   assert.ok($(".chat-body").classList.contains("picking"));
-  assert.deepEqual(chips(), ["Anthropic", "Google", "OpenAI", "OpenRouter"]);
+  assert.deepEqual(chips(), ["Anthropic", "Google", "OpenAI", "OpenRouter", "Groq"]);
   assert.deepEqual(sent("secret_present"), [{ key: "anthropic-api-key" }]);
   assert.deepEqual(sent("chat_models"), []);
   assert.match($(".picker-status").textContent, /No API key/);
@@ -91,6 +91,20 @@ test("switching provider saves it and asks the new provider only", async () => {
   assert.equal(State.settings.chatModels.google, "gemini-2.5-flash");
   assert.equal(sent("save_settings").at(-1).settings.chatModels.google, "gemini-2.5-flash");
   assert.deepEqual(models(), ["gemini-2.5-flash"]);
+});
+
+test("Groq uses its own key, lists its models and saves the chosen model", async () => {
+  answers.secret_present = ({ key }) => key === "groq-api-key";
+  answers.chat_models = [{ id: "openai/gpt-oss-20b", label: "GPT OSS 20B" }];
+  $(".model-btn").fire("click");
+  await flush();
+  view.el.find(".picker-chip").find((c) => c.textContent === "Groq").fire("click");
+  await flush();
+  assert.equal(State.settings.chatProvider, "groq");
+  assert.deepEqual(sent("chat_models"), [{ provider: "groq" }]);
+  assert.deepEqual(models(), ["GPT OSS 20B"]);
+  view.el.find(".picker-model")[0].fire("click");
+  assert.equal(sent("save_settings").at(-1).settings.chatModels.groq, "openai/gpt-oss-20b");
 });
 
 test("a local answer streams into one reply, then the finished text replaces it", async () => {

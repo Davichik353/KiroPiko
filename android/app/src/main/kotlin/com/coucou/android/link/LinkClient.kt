@@ -130,6 +130,7 @@ class LinkClient(
     @Volatile private var running = false
     /** Set by an auth or version error: retrying with the same pairing can never work. */
     @Volatile private var fatal = false
+    private var settingsReconnect = false
     /** The computer's welcome offered `answers` on this connection. */
     @Volatile private var answersOffered = false
     /** The computer's welcome offered `prefs` on this connection. */
@@ -260,6 +261,7 @@ class LinkClient(
             listener.onState(LinkState.CONNECTING)
             var connectedOnce = false
             var lost: LostReason? = null
+            settingsReconnect = false
             probeKilled = false
             try {
                 val s = connector.connect(connectTimeoutMs)
@@ -299,9 +301,12 @@ class LinkClient(
             if (fatal) running = false
             if (!running) break
             // A link that had been working and ended on its own: say why (a clean end of the stream is the computer closing it).
-            if (connectedOnce) listener.onLinkLost(if (probeKilled) LostReason.SILENT else lost ?: LostReason.CLOSED)
+            if (connectedOnce && !settingsReconnect) listener.onLinkLost(if (probeKilled) LostReason.SILENT else lost ?: LostReason.CLOSED)
             listener.onState(LinkState.DISCONNECTED)
             if (connectedOnce) attempt = 0 else listener.onConnectFailed(attempt + 1)
+            // Capabilities are renegotiated after a desktop setting changes. This is expected,
+            // so reconnect promptly without presenting a connection failure to the user.
+            if (settingsReconnect) continue
             val wait = backoffMs[minOf(attempt, backoffMs.size - 1)]
             attempt++
             wake.drainPermits()
@@ -323,6 +328,7 @@ class LinkClient(
 
     private fun read(input: InputStream, onFirstMessage: () -> Unit) {
         var first = true
+        var welcomed = false
         while (running) {
             val line = readLine(input) ?: return
             lastInboundMs = clockMs()
@@ -331,6 +337,7 @@ class LinkClient(
             when (msg) {
                 is ServerMsg.Welcome -> {
                     if (msg.version != Protocol.VERSION) { listener.onError("version", "desktop speaks v${msg.version}"); fatal = true; return }
+                    welcomed = true
                     // Stored before anyone is told, so a listener that reacts to the welcome can already use what was offered.
                     answersOffered = Protocol.CAP_ANSWERS in msg.caps
                     prefsOffered = Protocol.CAP_PREFS in msg.caps
@@ -361,7 +368,17 @@ class LinkClient(
                 is ServerMsg.ChatDelta -> listener.onChatDelta(msg.id, msg.text)
                 is ServerMsg.ChatDone -> listener.onChatDone(msg.id, msg.text)
                 is ServerMsg.ChatError -> listener.onChatError(msg.id, msg.reason, msg.message)
-                is ServerMsg.Error -> { listener.onError(msg.code, msg.message); if (msg.code == "auth") { fatal = true; return } }
+                is ServerMsg.Error -> {
+                    if (welcomed && msg.code == "closed" && msg.message in setOf(
+                            "details setting changed", "answers setting changed", "diffs setting changed",
+                            "usage setting changed", "services setting changed", "chat setting changed",
+                        )) {
+                        settingsReconnect = true
+                        return
+                    }
+                    listener.onError(msg.code, msg.message)
+                    if (msg.code == "auth") { fatal = true; return }
+                }
             }
         }
     }

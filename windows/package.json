@@ -1,5 +1,5 @@
 {
-  "name": "coucou-windows",
+  "name": "kiropiko-windows",
   "private": true,
   "version": "0.4.0",
   "type": "module",
@@ -8,10 +8,15 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "node --import ./tests/setup.mjs --test \"tests/**/*.test.mjs\"",
+    "check:preserved": "node scripts/check-coucou-preserved.mjs",
+    "native:check": "powershell -NoProfile -File scripts/native-windows.ps1 -Action check",
+    "native:test": "powershell -NoProfile -File scripts/native-windows.ps1 -Action test",
+    "native:dev": "powershell -NoProfile -File scripts/native-windows.ps1 -Action dev",
+    "native:build": "powershell -NoProfile -File scripts/native-windows.ps1 -Action build",
     "icons": "node scripts/gen-icons.mjs",
     "tauri": "tauri",
-    "predev": "cargo build --release -p coucou-hook",
-    "prebuild": "cargo build --release -p coucou-hook",
+    "hook:build": "cargo build --release -p coucou-hook",
+    "sounds": "node scripts/gen-nova-sounds.mjs",
     "pack": "tauri build && node scripts/pack.mjs"
   },
   "devDependencies": {

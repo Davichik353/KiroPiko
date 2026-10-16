@@ -10,7 +10,13 @@
 import { Bridge, emitToWindow, onEvent, type DesktopMode } from "../core/bridge";
 import type { BotEmoteName } from "../core/layout";
 import { Sound } from "../core/sound";
-import { BotEngine } from "../mochi/engine";
+import { NovaCharacter as BotEngine } from "../nova/character/adapter";
+import { loadCharacter, loadExtraCharacters } from "../nova/character/sprites";
+import type { PlayActivity } from "../nova/character/play";
+import { State, type Settings } from "../core/state";
+
+void loadCharacter().catch(console.error);
+void loadExtraCharacters();
 import {
   DESKTOP_EVENTS, DOUBLE_CLICK_MS, DRAG_THRESHOLD, PANEL_SIZE, agentActive, gaze, isOverBody,
   layerDragTopLeft, lookOrigin, pointerDistance, shouldSleep, windowDragTopLeft,
@@ -74,6 +80,22 @@ class DesktopMochi {
   }
 
   async start() {
+    const boot = await Bridge.boot();
+    if (boot) State.settings = { ...State.settings, ...boot.settings };
+    await onEvent<Settings>("settings-changed", settings => { State.settings = { ...State.settings, ...settings }; this.schedule(); });
+    await onEvent<boolean>("nova-quiet", quiet => {
+      State.novaQuietActive = quiet; Sound.setEnabled(State.settings.soundEnabled && !quiet); this.schedule();
+    });
+    await onEvent<boolean>("nova-music-playing", playing => { State.novaMusicPlaying = playing; this.schedule(); });
+    await onEvent<{ emote: BotEmoteName; phrase: string }>("nova-mood", mood => {
+      State.novaReaction = mood.emote; State.novaReactionUntil = performance.now() + 5000;
+      State.novaPhrase = mood.phrase; this.schedule();
+    });
+    await onEvent<PlayActivity | null>("nova-play", activity => {
+      this.engine.activity = activity;
+      if (activity) { this.lastAgentActive = performance.now(); this.wake(); }
+      this.schedule();
+    });
     void Sound.preload();
     const info = await Bridge.desktopInfo();
     if (info) this.mode = info.mode;
@@ -104,7 +126,7 @@ class DesktopMochi {
   private onSnapshot(s: DesktopSnapshot) {
     this.snap = s;
     this.informed = true;
-    Sound.setEnabled(s.soundEnabled);
+    Sound.setEnabled(s.soundEnabled && !State.novaQuietActive);
     Sound.setVolume(s.soundVolume);
     if (agentActive(s.state)) this.lastAgentActive = performance.now();
     if (!this.asleep) this.engine.setState(s.state);

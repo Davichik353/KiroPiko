@@ -1,3 +1,5 @@
+import { drawSprite } from "../nova/character/sprites";
+import { UPLOAD_BUTTONS, createUploadButtons, type UploadCanvasActions } from "./actions";
 // The upload canvas — port of UploadCanvasView.swift.
 //
 // While the sequence engine is active this canvas draws the whole island body:
@@ -10,16 +12,15 @@ import { SCRIPT_FONTS } from "../core/fonts";
 import { N_, isRtl, t } from "../i18n/i18n";
 import {
   USC, eIn, eInOut, eOut, lerp, progressAt,
-  type UploadEyeShape, type UploadFrame,
+  type UploadFrame,
 } from "./sequence";
 
 const FONT = `system-ui, "Segoe UI Variable Text", "Segoe UI", ${SCRIPT_FONTS}, sans-serif`;
 
 /** The card's inner right edge: no text runs past it. */
 const TEXT_RIGHT = USC.CARD_X + USC.CARD_W - 16;
-/** The two choose buttons, as drawn and as hit areas. */
-const ASK_BTN = { x: 114, w: 168 };
-const CANCEL_BTN = { x: 290, w: 120 };
+/** Choose buttons share their drawing and hit areas. */
+const { ask: ASK_BTN, mail: MAIL_BTN, cancel: CANCEL_BTN } = UPLOAD_BUTTONS;
 /** Drop-zone chips (English keys, shown with `t()`). */
 const CHIPS = [N_("PDF"), N_("Images"), N_("Code"), N_("Docs")];
 
@@ -31,25 +32,6 @@ function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: n
 }
 
 /** Superellipse body — port of usBodyPath(m, R). */
-function bodyPath(ctx: CanvasRenderingContext2D, m: number, R: number): { rx: number; ry: number } {
-  const mc = Math.max(0, Math.min(m, 1));
-  const n = 2.15 + (5.5 - 2.15) * mc;
-  const rx = R * (1.04 - 0.04 * mc);
-  const ry = R * (0.97 - 0.03 * mc);
-  ctx.beginPath();
-  for (let i = 0; i <= 96; i++) {
-    const a = (i / 96) * Math.PI * 2;
-    const ca = Math.cos(a);
-    const sa = Math.sin(a);
-    const px = rx * Math.sign(ca) * Math.pow(Math.abs(ca), 2 / n);
-    const py = ry * Math.sign(sa) * Math.pow(Math.abs(sa), 2 / n);
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  }
-  ctx.closePath();
-  return { rx, ry };
-}
-
 function text(
   ctx: CanvasRenderingContext2D,
   s: string,
@@ -106,12 +88,6 @@ function fitted(ctx: CanvasRenderingContext2D, s: string, maxW: number, weight: 
   return { font, s: ellipsize(ctx, s, maxW, font) };
 }
 
-export interface UploadCanvasActions {
-  /** Primary button — hand the file to the chat. */
-  ask(): void;
-  /** Secondary button. */
-  cancel(): void;
-}
 
 export class UploadCanvas {
   /** Wrapper holding the canvas and the two invisible choose buttons. */
@@ -128,19 +104,9 @@ export class UploadCanvas {
 
     // Invisible hit areas at the reference button positions. The labels are
     // painted on the canvas; these only catch the click.
-    const mk = (x: number, w: number, onclick: () => void) => {
-      const b = document.createElement("button");
-      b.className = "upload-hit";
-      b.style.left = `${x}px`;
-      b.style.top = "113px";
-      b.style.width = `${w}px`;
-      b.style.height = "26px";
-      b.addEventListener("click", onclick);
-      return b;
-    };
     this.overlay = document.createElement("div");
     this.overlay.id = "upload-overlay";
-    this.overlay.append(mk(ASK_BTN.x, ASK_BTN.w, actions.ask), mk(CANCEL_BTN.x, CANCEL_BTN.w, actions.cancel));
+    this.overlay.append(...createUploadButtons(document, actions, { ask: t("Ask a question about it"), mail: "Отправить по почте", cancel: t("Cancel") }));
 
     this.el = document.createElement("div");
     this.el.id = "upload-layer";
@@ -349,6 +315,12 @@ export class UploadCanvas {
     const ask = fitted(ctx, t("Ask a question about it"), ASK_BTN.w - 14, 500, 12.5);
     text(ctx, ask.s, ASK_BTN.x + ASK_BTN.w / 2, 126, ask.font, "#0B0C0E", "center");
 
+    ctx.fillStyle = "#203b31";
+    rr(ctx, MAIL_BTN.x, 113, MAIL_BTN.w, 26, 13);
+    ctx.fill();
+    const mail = fitted(ctx, "Отправить по почте", MAIL_BTN.w - 14, 500, 12.5);
+    text(ctx, mail.s, MAIL_BTN.x + MAIL_BTN.w / 2, 126, mail.font, "#a8edd4", "center");
+
     ctx.fillStyle = "rgba(255,255,255,0.09)";
     rr(ctx, CANCEL_BTN.x, 113, CANCEL_BTN.w, 26, 13);
     ctx.fill();
@@ -360,90 +332,14 @@ export class UploadCanvas {
   // ── Mochi ─────────────────────────────────────────────────────────────────
 
   private drawMochi(ctx: CanvasRenderingContext2D, f: UploadFrame) {
-    const R = f.d / 2 / 1.04;
-    const mc = Math.max(0, Math.min(f.morph, 1));
-
     ctx.save();
     ctx.translate(f.x, f.y + f.hop);
     ctx.rotate(f.tilt);
     ctx.scale(f.sx, f.sy);
-
-    const { rx, ry } = bodyPath(ctx, f.morph, R);
-
-    // Body.
-    const bg = ctx.createLinearGradient(rx * 0.7, -ry * 0.9, -rx * 0.8, ry * 0.9);
-    bg.addColorStop(0, "#EDEDEF");
-    bg.addColorStop(1, "#C4C5CA");
-    ctx.fillStyle = bg;
-    ctx.fill();
-
-    // Edge shadow.
-    const sg = ctx.createRadialGradient(0, 0, R * 0.2, 0, 0, R * 1.3);
-    sg.addColorStop(0, "rgba(0,0,0,0)");
-    sg.addColorStop(0.62, "rgba(0,0,0,0)");
-    sg.addColorStop(1, "rgba(0,0,0,0.12)");
-    ctx.fillStyle = sg;
-    ctx.fill();
-
-    // The body path is reused as a clip for everything drawn inside it.
-    ctx.save();
-    bodyPath(ctx, f.morph, R);
-    ctx.clip();
-
-    // Top rim, once Mochi is box-shaped enough to have one.
-    if (mc > 0.3) {
-      const a = Math.max(0, Math.min(1, (mc - 0.3) / 0.7));
-      ctx.beginPath();
-      ctx.moveTo(-rx * 0.72, -ry + 0.9);
-      ctx.lineTo(rx * 0.72, -ry + 0.9);
-      ctx.strokeStyle = `rgba(255,255,255,${0.6 * a})`;
-      ctx.lineWidth = 1.2;
-      ctx.lineCap = "round";
-      ctx.stroke();
-    }
-
-    // Mouth hole.
-    const mh = f.mouth * R * mc;
-    if (mh > 0.3) {
-      const mw = 2 * rx - 0.24 * R;
-      const mx = -mw / 2;
-      const my = -ry + 0.1 * R;
-      const g = ctx.createLinearGradient(0, my, 0, my + mh);
-      g.addColorStop(0, "#030304");
-      g.addColorStop(1, "#101114");
-      ctx.fillStyle = g;
-      rr(ctx, mx, my, mw, mh, Math.min(mw / 2, mh / 2));
-      ctx.fill();
-      if (mh > 4) {
-        const r = Math.min(mw / 2, mh / 2);
-        ctx.beginPath();
-        ctx.moveTo(mx + r, my + mh + 0.5);
-        ctx.lineTo(mx + mw - r, my + mh + 0.5);
-        ctx.strokeStyle = "rgba(255,255,255,0.55)";
-        ctx.lineWidth = 1;
-        ctx.lineCap = "round";
-        ctx.stroke();
-      }
-    }
-
-    // Eyes.
-    const ew = R * 0.25;
-    const eh = R * (0.62 - 0.16 * mc);
-    const ey = R * (0.02 + 0.28 * mc);
-    const sp = R * 0.3;
-    const lx = f.lookX * R * (0.34 - 0.08 * mc);
-    const ly = f.lookY * R * (0.16 - 0.09 * mc);
-    for (const sd of [-1, 1]) {
-      ctx.save();
-      ctx.translate(sd * sp + lx, ey + ly);
-      drawEye(ctx, f.eye, ew, eh);
-      ctx.restore();
-    }
-
-    ctx.restore(); // body clip
-    ctx.restore(); // transform
+    ctx.translate(-f.d, -f.d);
+    drawSprite(ctx, f.eye === "content" ? 2 : 3, f.d * 2, f.d * 2);
+    ctx.restore();
   }
-
   // ── The file, and the suction ─────────────────────────────────────────────
 
   private drawFile(ctx: CanvasRenderingContext2D, f: UploadFrame) {
@@ -520,48 +416,7 @@ export class UploadCanvas {
 
 // ── Eye shapes ──────────────────────────────────────────────────────────────
 
-const INK = "#0E0F12";
 
-function drawEye(ctx: CanvasRenderingContext2D, shape: UploadEyeShape, w: number, h: number) {
-  switch (shape) {
-    case "pill":
-      ctx.fillStyle = INK;
-      rr(ctx, -w / 2, -h / 2, w, h, w / 2);
-      ctx.fill();
-      break;
-
-    case "cup": {
-      // Flat top, semicircular bottom.
-      const hh = h * 0.55;
-      ctx.beginPath();
-      ctx.moveTo(-w / 2, -hh / 2);
-      ctx.lineTo(w / 2, -hh / 2);
-      ctx.lineTo(w / 2, hh / 2 - w / 2);
-      ctx.arc(0, hh / 2 - w / 2, w / 2, 0, Math.PI, false);
-      ctx.closePath();
-      ctx.fillStyle = INK;
-      ctx.fill();
-      break;
-    }
-
-    case "content":
-      ctx.beginPath();
-      ctx.arc(0, -h * 0.12, w * 0.85, Math.PI * 0.15, Math.PI * 0.85, false);
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = w * 0.5;
-      ctx.lineCap = "round";
-      ctx.stroke();
-      break;
-  }
-}
-
-// ── Document icon ───────────────────────────────────────────────────────────
-
-/**
- * The generic sheet with a folded corner. macOS swaps in the real file icon from
- * NSWorkspace; Windows has no equivalent reachable from the webview, so this is
- * the shape in every case — it is the same fallback the Swift draws.
- */
 function drawDoc(ctx: CanvasRenderingContext2D, cx: number, cy: number, wsc: number, hsc: number) {
   const w = 34 * wsc;
   const h = 42 * hsc;

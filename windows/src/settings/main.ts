@@ -3,7 +3,8 @@
 // integrations land here too in a later stage.
 
 import "./settings.css";
-import { Bridge, onEvent, type HookPreview, type HookStatus, type ShortcutsReport } from "../core/bridge";
+import { Bridge, IS_TAURI, onEvent, type HookPreview, type HookStatus, type ShortcutsReport } from "../core/bridge";
+import { readPreviewSettings } from "../nova/preview";
 import { CUSTOM_SERVER_KEY, providerDef, urlExposure } from "../core/providers";
 import {
   ISLAND_SHORTCUTS, SHORTCUTS, SHORTCUT_TEXT, activeKeys, displayKeys, duplicates, effective,
@@ -46,11 +47,43 @@ function pickColor(next: Record<string, string>) {
 
 // ── Reusable bits ─────────────────────────────────────────────────────────────
 
+function novaPermissions(): HTMLElement {
+  const quiet = toggle(settings.novaDoNotDisturb, on => { settings.novaDoNotDisturb = on; void save(); });
+  quiet.setAttribute("aria-label", "Не мешать");
+  const fullscreen = toggle(settings.novaQuietFullscreen, on => { settings.novaQuietFullscreen = on; void save(); });
+  fullscreen.setAttribute("aria-label", "Тихо в полноэкранном режиме");
+  const widthLabel = h("span", { text: `${settings.novaCapsuleWidth} px` });
+  const width = h("input", { type: "range", min: 260, max: 420, step: 4, value: settings.novaCapsuleWidth, "aria-label": "Ширина капсулы" }) as HTMLInputElement;
+  width.addEventListener("input", () => { widthLabel.textContent = `${width.value} px`; settings.novaCapsuleWidth = Number(width.value); void save(); });
+  const sizeLabel = h("span", { text: `${Math.round(settings.novaCharacterScale * 100)}%` });
+  const size = h("input", { type: "range", min: "70", max: "110", step: "5", value: Math.round(settings.novaCharacterScale * 100), "aria-label": "Размер Киро" }) as HTMLInputElement;
+  size.addEventListener("input", () => { sizeLabel.textContent = `${size.value}%`; settings.novaCharacterScale = Number(size.value) / 100; void save(); });
+  size.addEventListener("change", () => { settings.novaCharacterScale = Number(size.value) / 100; void save(); });
+  const autoplay = toggle(settings.novaAutoplay, (on) => { settings.novaAutoplay = on; void save(); });
+  autoplay.setAttribute("aria-label", "Прогулки Киро при бездействии");
+  const mic = toggle(settings.novaAllowMicrophone, (on) => { settings.novaAllowMicrophone = on; void save(); });
+  const screen = toggle(settings.novaAllowScreenCapture, (on) => { settings.novaAllowScreenCapture = on; void save(); });
+  mic.setAttribute("aria-label", "Разрешить микрофон KiroPiko");
+  screen.setAttribute("aria-label", "Разрешить захват экрана KiroPiko");
+  return h("section", {}, h("h2", { text: "KiroPiko · разрешения" }),
+    h("div", { class: "row" }, h("span", { text: "Не мешать · игры, звонки и трансляции" }), quiet),
+    h("div", { class: "row" }, h("span", { text: "Автоматически при полноэкранной работе" }), fullscreen),
+    h("div", { class: "hint", text: "Windows сообщает о полноэкранной работе и режиме презентации. Для звонка Zoom или стрима включайте «Не мешать» вручную: универсального определения демонстрации экрана нет. Задания и запросы разрешений сохраняются." }),
+    h("div", { class: "row" }, h("span", { text: "Ширина капсулы" }), width, widthLabel),
+    h("div", { class: "row" }, h("span", { text: "Размер персонажа" }), size, sizeLabel),
+    h("div", { class: "hint", text: "Монитор для островка выбирается ниже в общих настройках: основной, под курсором или конкретный экран. В браузерном превью доступен только текущий экран." }),
+    h("div", { class: "row" }, h("span", { text: "Прогулки и футбол при бездействии" }), autoplay),
+    h("div", { class: "row" }, h("span", { text: "Микрофон · только по кнопке" }), mic),
+    h("div", { class: "row" }, h("span", { text: "Снимок экрана · только по запросу" }), screen),
+    h("div", { class: "hint", text: "Оба разрешения выключены по умолчанию. Диктовка работает локально через голосовой пакет Windows. Снимок прикрепляется к чату и передаётся модели только при отправке сообщения. System Doctor только читает показатели компьютера." }));
+}
+
 function toggle(on: boolean, onChange: (v: boolean) => void): HTMLElement {
   const el = h("button", { class: on ? "switch on" : "switch", "aria-pressed": on });
   el.addEventListener("click", () => {
     const next = !el.classList.contains("on");
     el.classList.toggle("on", next);
+    el.setAttribute("aria-pressed", String(next));
     onChange(next);
   });
   return el;
@@ -510,7 +543,7 @@ const CHAT_STRINGS = {
 };
 
 interface CloudDef {
-  id: "google" | "openai" | "openrouter";
+  id: "google" | "openai" | "openrouter" | "groq";
   name: string;
   placeholder: string;
   where: string;
@@ -520,6 +553,7 @@ const CLOUD: CloudDef[] = [
   { id: "google", name: "Google AI", placeholder: "AIza…", where: "aistudio.google.com" },
   { id: "openai", name: "OpenAI", placeholder: "sk-…", where: "platform.openai.com" },
   { id: "openrouter", name: "OpenRouter", placeholder: "sk-or-…", where: "openrouter.ai/keys" },
+  { id: "groq", name: "Groq", placeholder: "gsk_…", where: "console.groq.com/keys" },
 ];
 
 function chatProvidersSection(
@@ -1263,7 +1297,7 @@ function applyLanguage() {
 
 function applyDirection() {
   document.documentElement.dir = isRtl() ? "rtl" : "ltr";
-  document.title = t("Settings — Coucou");
+  document.title = "Настройки — KiroPiko";
 }
 
 let rendering: Promise<void> | null = null;
@@ -1296,6 +1330,8 @@ async function main() {
   if (boot) {
     settings = { ...settings, ...boot.settings };
     version = boot.version;
+  } else if (!IS_TAURI) {
+    settings = { ...settings, ...readPreviewSettings() };
   }
   setLanguage(resolveLanguage(settings.language, systemLanguages()));
   applyDirection();
@@ -1361,7 +1397,12 @@ async function render() {
   shortcutsListener = null;
   clear(root);
   root.append(
-    h("h1", {}, h("span", { text: "Coucou" }), h("span", { class: "version", text: version })),
+    h("h1", {}, h("span", { text: "KiroPiko" }), h("span", { class: "version", text: version })),
+    !IS_TAURI ? h("section", { class: "preview-banner" },
+      h("strong", { text: "Браузерное превью" }),
+      h("p", { text: "Внешний вид и выбор персонажей сохраняются в этом браузере. Подключение агентов, API-ключи и системные функции работают в приложении Windows." }),
+      h("button", { class: "btn", text: "← Вернуться к KiroPiko", onclick: () => window.location.assign("/") })) : document.createTextNode(""),
+    novaPermissions(),
     claudeSection(status),
     agentsSection(agents),
     planSection(status),

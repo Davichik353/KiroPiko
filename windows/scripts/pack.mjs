@@ -10,7 +10,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const bundleRoot = join(root, "target", "release", "bundle");
 const outDir = join(root, "release");
 
-const { version } = JSON.parse(readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8"));
+const { version, productName } = JSON.parse(readFileSync(join(root, "src-tauri", "tauri.conf.json"), "utf8"));
+const product = String(productName).replace(/[^A-Za-z0-9._-]/g, "");
+if (!product) throw new Error("Invalid package product name.");
 
 // What each platform ships: where Tauri puts it, how to recognise it, and the
 // names it is published under (the rolling name, when there is one, always
@@ -22,22 +24,22 @@ const PACKAGES = {
     {
       dir: "nsis",
       suffix: "-setup.exe",
-      names: [`Coucou-Windows-${version}-setup.exe`, "Coucou-Windows-setup.exe"],
+      names: [`${product}-Windows-${version}-setup.exe`, `${product}-Windows-setup.exe`],
     },
     {
       dir: "msi",
       suffix: ".msi",
-      names: [`Coucou-Windows-${version}.msi`, "Coucou-Windows.msi"],
+      names: [`${product}-Windows-${version}.msi`, `${product}-Windows.msi`],
     },
   ],
   linux: [
     {
       dir: "appimage",
       suffix: ".AppImage",
-      names: [`Coucou-Linux-${version}-${arch}.AppImage`, `Coucou-Linux-${arch}.AppImage`],
+      names: [`${product}-Linux-${version}-${arch}.AppImage`, `${product}-Linux-${arch}.AppImage`],
     },
-    { dir: "deb", suffix: ".deb", names: [`Coucou-Linux-${version}-${debArch}.deb`] },
-    { dir: "rpm", suffix: ".rpm", names: [`Coucou-Linux-${version}-${arch}.rpm`] },
+    { dir: "deb", suffix: ".deb", names: [`${product}-Linux-${version}-${debArch}.deb`] },
+    { dir: "rpm", suffix: ".rpm", names: [`${product}-Linux-${version}-${arch}.rpm`] },
   ],
 };
 

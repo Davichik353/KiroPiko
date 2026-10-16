@@ -110,11 +110,12 @@ class SoundEngine {
 
   setVolume(v: number) {
     this.volume = Math.max(0, Math.min(0.2, v));
-    if (this.master) this.master.gain.value = this.volume;
+    if (this.master) this.master.gain.value = this.enabled ? this.volume : 0;
   }
 
   setEnabled(on: boolean) {
     this.enabled = on;
+    if (this.master) this.master.gain.value = on ? this.volume : 0;
   }
 
   play(name: SoundName | string) {

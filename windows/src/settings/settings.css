@@ -431,3 +431,6 @@ html[dir="rtl"] :is(.diff, .path, .keycap, input[type="password"], input[type="t
 /* Settings → Android phone: the pairing QR code (an SVG from Rust, black on white). */
 .qr { width: 220px; max-width: 100%; background: #fff; border-radius: 8px; padding: 4px; }
 .qr svg { display: block; width: 100%; height: auto; }
+/* Browser preview navigation and capability explanation. */
+.preview-banner { border: 1px solid #8551d9; border-radius: 12px; padding: 16px; margin-bottom: 20px; background: #21192d; }
+.preview-banner p { font-size: 12px; line-height: 1.6; margin: 10px 0; color: #c9bedc; }

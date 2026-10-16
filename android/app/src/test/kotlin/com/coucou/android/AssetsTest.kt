@@ -11,7 +11,7 @@ class AssetsTest {
     private val res = File("src/main/res")
 
     @Test fun everyBundledSoundIsTheDesktopsOwnFileByteForByte() {
-        val desktop = ReferenceFiles.file("NotchBuddy/Resources/sounds").listFiles { f -> f.extension == "wav" }!!.associateBy { it.name }
+        val desktop = ReferenceFiles.file("windows/public/sounds").listFiles { f -> f.extension == "wav" }!!.associateBy { it.name }
         for (f in raw.listFiles()!!) {
             val original = desktop[f.name] ?: error("${f.name} is not one of the desktop's sounds")
             assertTrue(f.name, original.readBytes().contentEquals(f.readBytes()))

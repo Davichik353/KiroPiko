@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Coucou",
+  "productName": "KiroPiko",
   "version": "0.4.0",
   "identifier": "fr.louisraille.coucou",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run hook:build && npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "npm run hook:build && npm run build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -18,7 +18,7 @@
     "windows": [
       {
         "label": "island",
-        "title": "Coucou",
+        "title": "KiroPiko",
         "url": "index.html",
         "width": 240,
         "height": 6,
@@ -48,11 +48,11 @@
       "icons/128x128@2x.png",
       "icons/icon.ico"
     ],
-    "resources": { "../target/release/coucou-hook.exe": "coucou-hook.exe" },
+    "resources": { "../target/release/coucou-hook.exe": "coucou-hook.exe", "../../LICENSE": "licenses/Coucou-MIT.txt", "../../android/LICENSE": "licenses/Phone-Link-MIT.txt" },
     "copyright": "© Louis Raille",
     "category": "DeveloperTool",
-    "shortDescription": "Mochi lives at the top of your screen",
-    "longDescription": "Coucou puts Mochi at the top of your screen: it shows your Claude Code sessions and a few integrations, and lets you approve, answer, chat and drop files without leaving what you are doing.",
+    "shortDescription": "KiroPiko — your Windows AI companion",
+    "longDescription": "KiroPiko is a Windows desktop companion with AI agent sessions, model chat, on-demand system diagnostics, voice dictation and screenshot assistance.",
     "windows": {
       "nsis": {
         "installMode": "currentUser",

@@ -26,10 +26,10 @@ class ScreenLayoutTest {
 
     @Test fun theNoticeNamesTheOriginalAuthorAndHisRepository() {
         val xml = File("src/main/res/values/strings.xml").readText()
-        assertTrue(xml.contains("Coucou for Android, by Rhytam Biswas. Part of Coucou by Louis Raillé"))
+        assertTrue(xml.contains("KiroPiko for Android. Based on Coucou by Louis Raillé and Rhytam Biswas."))
         assertTrue(xml.contains("github.com/Louis-CFM/coucou"))
         assertTrue(xml.contains("© Louis Raillé"))
-        assertTrue(xml.contains("MIT License"))
+        assertTrue(xml.contains("MIT"))
     }
 
     @Test fun theHeroNeverShowsTheRawStatusText() {

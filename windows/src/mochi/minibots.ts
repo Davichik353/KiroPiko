@@ -1,7 +1,8 @@
 // Mini Mochis (pills + compact grid) — port of MiniBotCanvasView.
 // Each canvas owns a BotEngine; the island's frame loop ticks every live one.
 
-import { BotEngine, hexToRGB } from "./engine";
+import { hexToRGB } from "./engine";
+import { NovaCharacter as BotEngine } from "../nova/character/adapter";
 import type { AgentTask } from "../core/state";
 
 interface MiniBot {
@@ -41,6 +42,7 @@ export function createMiniBot(task: AgentTask, bodySize: number, dancing?: () =>
 
   const engine = new BotEngine();
   engine.isMini = true;
+  engine.serviceId = task.id;
   engine.bodyColor = hexToRGB(task.color);
   engine.setState(task.state, true);
   if (task.emote) engine.setPermanentEmote(task.emote);

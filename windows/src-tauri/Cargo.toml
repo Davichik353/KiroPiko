@@ -50,6 +50,14 @@ keyring = { version = "3", features = ["windows-native"] }
 webview2-com = "0.39"
 wv2_core = { package = "windows-core", version = "0.62" }
 windows = { version = "0.61", features = [
+  "Foundation",
+  "Media_Control",
+  "Storage_Streams",
+  "Win32_System_WinRT",
+  "Win32_System_Com",
+  "Win32_System_Variant",
+  "Win32_UI_Accessibility",
+  "Win32_UI_Shell",
   "Win32_Foundation",
   "Win32_Security",
   "Win32_Security_Authorization",

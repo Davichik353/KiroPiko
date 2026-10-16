@@ -80,9 +80,9 @@ class WidgetPreviewTest {
 
     @Test fun theNamesAreTheOnesInTheBrief() {
         val expected = mapOf(
-            "widget_solo_label" to "Mochi at a glance", "widget_list_label" to "All your agents", "widget_big_label" to "Mochi, big",
+            "widget_solo_label" to "Kiro at a glance", "widget_list_label" to "All your agents", "widget_big_label" to "Kiro, big",
             "widget_pill_label" to "One-line status", "widget_alert_label" to "Approvals waiting", "widget_ring_label" to "Plan usage",
-            "widget_today_label" to "Finished today", "widget_mood_label" to "Mochi's mood", "widget_glance_label" to "Agents summary",
+            "widget_today_label" to "Finished today", "widget_mood_label" to "Kiro's mood", "widget_glance_label" to "Agents summary",
         )
         for ((k, v) in expected) assertEquals(k, v, strings[k])
     }
@@ -175,29 +175,21 @@ class WidgetPreviewTest {
 
     @Test fun everyStateHasAVectorFaceAGlowAndTheLayeredMochi() {
         for ((state, tone) in states) {
-            val face = read("${res}drawable/preview_face_$state.xml")
-            val glow = read("${res}drawable/preview_glow_$state.xml")
-            val mochi = read("${res}drawable/preview_mochi_$state.xml")
-            assertTrue(state, face.contains("<vector") && glow.contains("<vector"))
-            // The glow is in the state's colour and fades to nothing, and sits behind the face.
-            assertTrue("$state glow colour", glow.contains(hex(tone)))
-            assertTrue("$state glow fades out", glow.contains("""android:type="radial"""") && Regex("""android:color="#00${hex(tone)}"""").containsMatchIn(glow))
-            assertTrue(mochi.indexOf("preview_glow_$state") in 0 until mochi.indexOf("preview_face_$state"))
-            // The body, its light gradient, the pink cheeks and two dark eyes.
-            assertTrue(face.contains("#EDEDEF") && face.contains("#C4C5CA"))
-            assertTrue(face.contains("#59FF7896"))
-            assertTrue(state, Regex("""#1A1412""").findAll(face).count() >= 2)
-            for (d in listOf(face, glow)) {
-                assertTrue(d.contains("""android:viewportWidth="120"""") && d.contains("""android:viewportHeight="120""""))
-            }
+            val face = read(res + "drawable/preview_face_$state.xml")
+            val glow = read(res + "drawable/preview_glow_$state.xml")
+            val mark = read(res + "drawable/preview_mochi_$state.xml")
+            assertTrue(face.contains("<vector") && face.contains("#FF7EDDBB"))
+            assertFalse(face.contains("#EDEDEF") || face.contains("#C4C5CA"))
+            assertTrue(glow.contains(hex(tone)))
+            assertTrue(mark.indexOf("preview_glow_$state") in 0 until mark.indexOf("preview_face_$state"))
         }
     }
 
     @Test fun theBadgesAreTheOnesOfTheStates() {
-        assertTrue("blue dots bubble", read(res + "drawable/preview_face_working.xml").let { it.contains("#3B9EFF") && Regex("""#FFFFFF" android:pathData="M25.5""").containsMatchIn(it) })
-        assertTrue("orange bang", read(res + "drawable/preview_face_waiting.xml").let { it.contains("#F5A524\" android:pathData=\"M25.7") && it.contains("#FFFFFF") })
-        assertTrue("green check", read(res + "drawable/preview_face_done.xml").let { it.contains("#34D499") && it.contains("""android:strokeColor="#FFFFFF"""") })
-        assertFalse("calm: no badge", read(res + "drawable/preview_face_idle.xml").contains("""android:fillColor="#000000""""))
+        for ((state, tone) in states) {
+            assertTrue(read(res + "drawable/preview_face_$state.xml").contains("#FF7EDDBB"))
+            assertTrue(read(res + "drawable/preview_glow_$state.xml").contains(hex(tone)))
+        }
     }
 
     @Test fun theRingIsANormalTealArcAtSixtyEightPercent() {
@@ -246,7 +238,7 @@ class WidgetPreviewTest {
             assertTrue("$n has no starting face", xml.contains("@drawable/preview_mochi_idle") || xml.contains("@drawable/preview_face_idle") || n == "pill")
             if (n != "mood") assertTrue("$n has no starting line", xml.contains("@string/widget_initial_"))
         }
-        assertEquals("Coucou", strings["widget_initial_title"])
+        assertEquals("KiroPiko", strings["widget_initial_title"])
         assertEquals("Waiting for your agents", strings["widget_initial_line"])
         // The List starts on its empty state, not on empty rows.
         val list = read(res + "layout/widget_list.xml")

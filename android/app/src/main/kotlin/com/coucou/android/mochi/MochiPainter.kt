@@ -59,6 +59,10 @@ object MochiPainter {
 
     /** Draws Mochi centred in this DrawScope. `nowSec` drives spirals, wave and badge pulses. */
     fun DrawScope.drawMochi(e: MochiEngine, nowSec: Double) {
+        with(KiroPainter) { drawKiro(e, nowSec) }
+    }
+
+    private fun DrawScope.drawLegacyMochi(e: MochiEngine, nowSec: Double) {
         val w = size.width.toDouble()
         val h = size.height.toDouble()
         val r = w * 0.3

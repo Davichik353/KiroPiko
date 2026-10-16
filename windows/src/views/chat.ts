@@ -14,6 +14,8 @@ import {
   activeModel, pickModel, providerDef, visibleProviders, withModel, type ProviderDef,
 } from "../core/providers";
 import { Sound } from "../core/sound";
+import { Speech } from "../nova/voice/speech";
+import { showNotice } from "../nova/preview";
 import { State, type ChatMessage } from "../core/state";
 import type { ViewHost } from "./views";
 import { N_, t, tl } from "../i18n/i18n";
@@ -223,6 +225,15 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
     svg(ICONS.chevronUpDown, 9, { stroke: 2 }),
   );
   const modelRow = h("div", { class: "model-row" }, modelBtn);
+  const readReply = h("button", { class: "nova-speech-btn", text: "Озвучить", title: "Озвучить последний ответ", disabled: true });
+  const stopSpeech = h("button", { class: "nova-speech-btn", text: "Стоп", title: "Остановить озвучивание", disabled: true });
+  modelRow.append(readReply, stopSpeech);
+  readReply.addEventListener("click", () => {
+    const reply = [...State.chatHistory].reverse().find(message => message.role === "assistant");
+    if (!reply) return;
+    try { Speech.speak(reply.content); } catch (err) { showNotice(String(err).replace(/^Error:\s*/, "")); }
+  });
+  stopSpeech.addEventListener("click", () => Speech.stop());
 
   const body = h("div", { class: "chat-body" });
   const picker = buildPicker(() => {
@@ -267,6 +278,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
   async function submit() {
     const query = input.value.trim();
     if (!query || sending) return;
+    Speech.stop();
     if (picker.isOpen) picker.close();
     input.value = "";
     sending = true;
@@ -319,6 +331,13 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
   return {
     el,
     sync() {
+      readReply.disabled = sending || !State.chatHistory.some(message => message.role === "assistant");
+      stopSpeech.disabled = !State.novaSpeaking;
+      if ((State.view !== "prompt" || State.mode !== "expanded") && State.novaSpeaking) Speech.stop();
+      if (State.novaDraft != null) {
+        input.value = State.novaDraft;
+        State.novaDraft = null;
+      }
       const file = State.droppedFile;
       const wantChip = file?.name ?? "";
       if (chipRow.dataset.label !== wantChip) {

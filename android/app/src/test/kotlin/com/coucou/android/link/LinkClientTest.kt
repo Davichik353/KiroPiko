@@ -138,6 +138,30 @@ class LinkClientTest {
         assertTrue(d.received.poll(2, TimeUnit.SECONDS)!!.contains("\"device\":\"Pixel\""))
     }
 
+    @Test fun desktopSettingsReconnectWithoutAnErrorOrLostConnectionWarning() {
+        val d = FakeDesktop(tls = true).track()
+        val rec = Recorder()
+        client(d, rec, backoff = longArrayOf(10_000)).start()
+        assertNotNull(rec.sessions.poll(5, TimeUnit.SECONDS))
+        for (setting in listOf("details", "answers", "diffs", "usage", "services", "chat")) {
+            d.push("""{"type":"error","code":"closed","message":"$setting setting changed"}""")
+            assertNotNull("did not reconnect after $setting changed", rec.sessions.poll(5, TimeUnit.SECONDS))
+        }
+        assertTrue(rec.errors.isEmpty())
+        assertTrue(rec.lost.isEmpty())
+    }
+
+    @Test fun ordinaryDesktopClosureStillReportsAnErrorAndLostConnection() {
+        val d = FakeDesktop(tls = true).track()
+        val rec = Recorder()
+        client(d, rec).start()
+        assertNotNull(rec.sessions.poll(5, TimeUnit.SECONDS))
+        d.push("""{"type":"error","code":"closed","message":"the phone link was turned off"}""")
+        d.dropConnection()
+        assertEquals("closed", rec.errors.poll(5, TimeUnit.SECONDS))
+        assertNotNull(rec.lost.poll(5, TimeUnit.SECONDS))
+    }
+
     @Test fun refusesADesktopWithAnotherCertificate() {
         val d = FakeDesktop(tls = true).track()
         val rec = Recorder()

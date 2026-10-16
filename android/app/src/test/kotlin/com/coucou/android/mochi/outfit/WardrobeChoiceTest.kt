@@ -46,7 +46,7 @@ class WardrobeChoiceTest {
 
     @Test fun theIconsAreDrawnByTheSameCodeAsTheBigMochi() {
         val screen = src("ui/WardrobeScreen.kt")
-        assertTrue(screen.contains("drawIconMochi("))
+        assertTrue(screen.contains("drawKiro("))
         assertTrue(src("mochi/MochiPainter.kt").contains("drawOutfitFront(") && src("mochi/MochiPainter.kt").contains("drawOutfitBehind("))
     }
 

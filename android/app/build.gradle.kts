@@ -19,13 +19,13 @@ android {
     namespace = "com.coucou.android"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.coucou.android"
+        applicationId = "com.kiropiko.android"
         minSdk = 30
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 1
+        versionName = "0.1.0-preview"
         // English only: libraries' other languages are left out of the app too.
-        resourceConfigurations += listOf("en")
+        resourceConfigurations += listOf("en", "ru")
     }
     signingConfigs {
         val keystore = releaseKeystore

@@ -2,40 +2,29 @@ package com.coucou.android
 
 import java.io.File
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The app is English only, whatever the phone's language is. */
+/** English fallback and complete Russian localisation. */
 class EnglishOnlyTest {
     private fun read(path: String) = File(path).readText()
+    private fun entries(path: String) = Regex("""<string name="(\w+)">(.*?)</string>""").findAll(read(path)).associate { it.groupValues[1] to it.groupValues[2] }
 
-    @Test fun theBuildKeepsOnlyEnglishResources() {
-        val gradle = read("build.gradle.kts")
-        assertTrue(Regex("""resourceConfigurations\s*\+=\s*listOf\("en"\)""").containsMatchIn(gradle))
+    @Test fun theBuildIncludesEnglishAndRussianResources() {
+        assertTrue(read("build.gradle.kts").contains("listOf(\"en\", \"ru\")"))
+        assertTrue(read("src/main/AndroidManifest.xml").contains("localeConfig"))
+        val config = read("src/main/res/xml/locales_config.xml")
+        assertTrue(config.contains("android:name=\"ru\"") && config.contains("android:name=\"en\""))
     }
-
-    @Test fun thereIsNoLanguageChoiceAnywhere() {
-        assertFalse(read("src/main/AndroidManifest.xml").contains("localeConfig"))
-        assertFalse(File("src/main/res/xml/locales_config.xml").exists())
-        assertFalse(File("src/main/kotlin/com/coucou/android/core/Languages.kt").exists())
-        val settings = read("src/main/kotlin/com/coucou/android/ui/SettingsScreens.kt")
-        assertFalse(settings.contains("LocaleManager"))
-        assertFalse(settings.contains("applicationLocales"))
+    @Test fun russianHasEveryEnglishResourceAndNoExtraKeys() {
+        val en = entries("src/main/res/values/strings.xml")
+        assertTrue(en.size >= 314)
+        assertEquals(en.keys, entries("src/main/res/values-ru/strings.xml").keys)
     }
-
-    @Test fun englishStringsAreTheSingleSourceOfTruth() {
-        val source = read("../i18n/app-strings.json")
-        val english = Regex("""name="([a-z_0-9]+)"""").findAll(read("src/main/res/values/strings.xml")).map { it.groupValues[1] }.toSet()
-        val declared = Regex("""^\s{4}"([a-z_0-9]+)":""", RegexOption.MULTILINE).findAll(source.substringAfter(""""strings"""")).map { it.groupValues[1] }.toSet()
-        assertEquals(declared, english)
-    }
-
-    @Test fun thereAreNoOtherLanguagesInTheRepo() {
-        val folders = File("src/main/res").listFiles().orEmpty().map { it.name }.filter { it.startsWith("values") }
-        // values-notnight is not a language: it is the light variant of the Widgets' colours, and holds colours only.
-        assertEquals(listOf("values", "values-notnight"), folders.sorted())
-        assertEquals(listOf("colors.xml"), File("src/main/res/values-notnight").listFiles().orEmpty().map { it.name })
-        assertFalse(File("../i18n/extra.json").exists())
+    @Test fun bothTranslationsPreserveFormatArguments() {
+        val en = entries("src/main/res/values/strings.xml")
+        val ru = entries("src/main/res/values-ru/strings.xml")
+        fun args(text: String) = Regex("""%[0-9]+\$[sdf]""").findAll(text).map { it.value }.sorted().toList()
+        for ((key, text) in en) assertEquals(key, args(text), args(ru.getValue(key)))
     }
 }

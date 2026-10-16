@@ -108,7 +108,7 @@ class ChatTabSourceTest {
         assertTrue(strings.contains("Not connected"))
         assertTrue(strings.contains("Chat is off on your computer"))
         assertTrue(strings.contains("Your computer has no model allowed for the phone yet"))
-        assertTrue(strings.contains("On your computer open Coucou &gt; Settings &gt; Android phone, turn on"))
+        assertTrue(strings.contains("On your computer open KiroPiko &gt; Settings &gt; Android phone, turn on"))
         assertTrue(strings.contains("Let the phone chat with my AI providers"))
         assertTrue(strings.contains("tick a model"))
         val body = Regex("""<string name="chat_(off|nomodel)[a-z_]*">([^<]*)</string>""").findAll(strings).map { it.groupValues[2].lowercase() }.toList()

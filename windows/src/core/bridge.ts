@@ -1,23 +1,40 @@
-// Thin wrapper over the Tauri commands/events. Every call is a no-op when the
-// page is opened in a plain browser, so the island can be iterated on with
-// `npm run dev` alone.
+// Tauri commands/events. Browser preview supports settings navigation and
+// appearance preferences; OS launch actions explain that native KiroPiko is needed.
 
 import { invoke } from "@tauri-apps/api/core";
 import { emitTo, listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Settings } from "./state";
+import type { DoctorSnapshot } from "../nova/doctor/diagnostics";
 import type { RecapHistory, RecapPrefs } from "../recap/summary";
 import type { SpotifyState } from "./spotify";
+import type { MediaSnapshot } from "../nova/music/state";
+import { savePreviewSettings, showNotice } from "../nova/preview";
 
 export const IS_TAURI =
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T | null> {
-  if (!IS_TAURI) return null;
+  if (!IS_TAURI) {
+    if (cmd === "open_settings_window") window.location.assign("/settings.html");
+    else if (cmd === "save_settings") savePreviewSettings(args?.settings as Settings);
+    else if (cmd === "open_url" && typeof args?.url === "string") {
+      try {
+        const url = new URL(args.url);
+        if (url.protocol === "https:" || url.protocol === "http:") window.open(url.href, "_blank", "noopener,noreferrer");
+      } catch { showNotice("Некорректный адрес сервиса."); }
+    } else if (cmd.startsWith("open_") || cmd === "spotify_open" || cmd === "reveal_sounds_folder") {
+      showNotice("Это браузерное превью KiroPiko. Открывать программы и локальные файлы может установленное приложение Windows.");
+    }
+    return null;
+  }
   try {
-    return await invoke<T>(cmd, args);
+    const result = await invoke<T>(cmd, args);
+    if (result === false && cmd.startsWith("open_")) showNotice("Windows не смог открыть программу. Проверьте, что она установлена и доступна приложению KiroPiko.");
+    return result;
   } catch (err) {
     console.error(`[coucou] ${cmd} failed`, err);
+    if (cmd.startsWith("open_")) showNotice(`Не удалось выполнить действие: ${String(err)}`);
     return null;
   }
 }
@@ -179,6 +196,18 @@ export interface PhoneAnswersStatus {
 }
 
 export const Bridge = {
+  attentionState: () => call<number>("nova_attention_state"),
+  systemSnapshot: () => callOrThrow<DoctorSnapshot>("nova_system_snapshot"),
+  exportDoctorReport: (report: string) => callOrThrow<string>("nova_export_doctor_report", { report }),
+  voiceListen: () => callOrThrow<string>("nova_voice_listen"),
+  voiceStop: () => callOrThrow<void>("nova_voice_stop"),
+  musicControl: (action: "playPause" | "previous" | "next" | "volumeUp" | "volumeDown" | "mute") => callOrThrow<void>("nova_music_control", { action }),
+  mediaSnapshot: () => callOrThrow<MediaSnapshot | null>("nova_media_snapshot"),
+  sendMail: (draft: { to: string; from: string; subject: string; body: string; path: string; requestId: string }) => callOrThrow<string>("nova_send_mail", draft),
+  mediaArtwork: (source: string, title: string) => callOrThrow<string | null>("nova_media_artwork", { source, title }),
+  mediaControl: (action: "play" | "pause" | "playPause" | "previous" | "next" | "seek" | "shuffle" | "repeat" | "yandexShuffle" | "yandexRepeat", source: string, value?: number, expectedTitle?: string) => callOrThrow<void>("nova_media_control", { action, source, value: value ?? null, expectedTitle: expectedTitle ?? null }),
+  openProgram: (program: "notepad" | "calculator" | "explorer") => callOrThrow<void>("nova_open_program", { program }),
+  captureScreen: () => callOrThrow<DroppedFile>("nova_capture_screen"),
   boot: () => call<BootInfo>("boot"),
   /** The system's languages as the webview sees them, for Rust's own texts (i18n.rs). */
   setSystemLanguages: (languages: string[]) => call<void>("set_system_languages", { languages }),
@@ -389,6 +418,7 @@ export const Bridge = {
   desktopDragBegin: () => call<[number, number] | null>("desktop_mochi_drag_begin"),
   /** X11: top-left corner, physical pixels. */
   desktopDragMove: (x: number, y: number) => call<void>("desktop_mochi_drag_move", { x, y }),
+  desktopRoam: (x: number, y: number) => call<boolean>("nova_desktop_roam", { x, y }),
   desktopDragEnd: (x: number, y: number) => call<void>("desktop_mochi_drag_end", { x, y }),
   /** From the island to his spot. False: no spot on any connected display.
    *  `anywhere`: the first-visit corner then, rather than staying home. */
@@ -520,7 +550,7 @@ export interface HookPreview {
 
 /** Same as `call`, but surfaces the error so the UI can show what went wrong. */
 async function callOrThrow<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
-  if (!IS_TAURI) throw new Error("not running inside Coucou");
+  if (!IS_TAURI) throw new Error("Эта функция доступна в приложении KiroPiko для Windows.");
   return invoke<T>(cmd, args);
 }
 

@@ -98,6 +98,14 @@ export interface IntegrationInfo {
 }
 
 export interface Settings {
+  novaCapsuleWidth: number;
+  novaDoNotDisturb: boolean;
+  novaQuietFullscreen: boolean;
+  novaCharacterScale: number;
+  novaOnboardingDone: boolean;
+  novaAutoplay: boolean;
+  novaAllowMicrophone: boolean;
+  novaAllowScreenCapture: boolean;
   soundEnabled: boolean;
   soundVolume: number;
   autoCloseInterval: number;
@@ -165,6 +173,14 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
+  novaCharacterScale: 1,
+  novaOnboardingDone: false,
+  novaAutoplay: true,
+  novaCapsuleWidth: 304,
+  novaDoNotDisturb: false,
+  novaQuietFullscreen: true,
+  novaAllowMicrophone: false,
+  novaAllowScreenCapture: false,
   soundEnabled: true,
   soundVolume: 0.12,
   autoCloseInterval: 15,
@@ -225,6 +241,14 @@ class AppState {
   noteMessage: string | null = null;
   searchResult: SearchResult | null = null;
   chatHistory: ChatMessage[] = [];
+  novaDraft: string | null = null;
+  novaListening = false;
+  novaSpeaking = false;
+  novaQuietActive = false;
+  novaReaction: BotEmoteName | null = null;
+  novaReactionUntil = 0;
+  novaPhrase = "";
+  novaMusicPlaying = false;
   pendingApproval: ApprovalInfo | null = null;
   /** The pill that was in front when the card came up; it comes back after. */
   focusBeforeApproval: string | null = null;
