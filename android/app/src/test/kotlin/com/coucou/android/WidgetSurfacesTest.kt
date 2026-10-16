@@ -38,7 +38,11 @@ class WidgetSurfacesTest {
     @Test fun noWidgetSourceTouchesAnythingBeyondTheGlance() {
         // Agent names, state words and colours only: no step text, no command, no file, no answer.
         for ((name, src) in sources) {
-            for (word in listOf("statusText", "finalLine", "steps", ".command", "files", "project")) assertFalse("$name uses $word", src.contains(word))
+            for (word in listOf("statusText", "finalLine", "steps", ".command", "files", "project")) {
+                // This widget explicitly shows the folder name already shared by the details capability.
+                if(word=="project" && name=="app/WaitingAlertWidget.kt")continue
+                assertFalse("$name uses $word", src.contains(word))
+            }
         }
     }
 
@@ -260,7 +264,7 @@ class WidgetSurfacesTest {
     }
 
     @Test fun everyWidgetIsOnTheSharedCardAndOnlyUsesWhatRemoteViewsAllow() {
-        val allowed = setOf("FrameLayout", "LinearLayout", "RelativeLayout", "GridLayout", "TextView", "ImageView", "ProgressBar", "Button")
+        val allowed = setOf("FrameLayout", "LinearLayout", "RelativeLayout", "GridLayout", "TextView", "ImageView", "ProgressBar", "Button", "Chronometer")
         for (layout in File("src/main/res/layout").listFiles()!!.filter { it.name.startsWith("widget_") }) {
             val xml = layout.readText()
             assertTrue(layout.name, xml.contains("@drawable/widget_card"))
@@ -279,7 +283,7 @@ class WidgetSurfacesTest {
         assertFalse(texts.contains("Wedge", ignoreCase = true))
         // The picker names: short, and the same ones in the README.
         val readme = File("../README.md").readText()
-        for (w in listOf("Kiro at a glance", "All your agents", "Kiro, big", "One-line status", "Approvals waiting", "Plan usage", "Finished today", "Kiro's mood")) {
+        for (w in listOf("Kiro at a glance", "All your agents", "Kiro, big", "One-line status", "Needs your decision", "Plan usage", "Finished today", "Kiro's mood")) {
             assertTrue(w, strings.contains(w))
             assertTrue("$w is not in the README", readme.contains(w))
         }

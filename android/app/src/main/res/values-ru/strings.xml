@@ -22,7 +22,7 @@
     <string name="widget_big_description">Киро, использование тарифа и быстрые действия.</string>
     <string name="widget_pill_label">Капсула состояния</string>
     <string name="widget_pill_description">Состояние главного агента в одной строке.</string>
-    <string name="widget_alert_label">Запросы разрешений</string>
+    <string name="widget_alert_label">Нужно твоё решение</string>
     <string name="widget_alert_description">Показывает, когда агенту нужно ваше разрешение.</string>
     <string name="widget_ring_label">Использование тарифа</string>
     <string name="widget_ring_description">Использование тарифа Claude или Codex.</string>
@@ -323,4 +323,20 @@
     <string name="channel_quiet_desc">Запрос ожидает ответа и показан в островке</string>
     <string name="channel_approval">Запросы разрешений</string>
     <string name="channel_approval_desc">Агент ожидает вашего разрешения</string>
+    <string name="support_title">Помощь и обновления</string>
+    <string name="support_version">Версия %1$s</string>
+    <string name="support_report">Что сломалось?</string>
+    <string name="support_private">Только версия, состояния и категории ошибок. Просмотрите перед отправкой.</string>
+    <string name="support_check">Проверить обновления</string>
+    <string name="support_checking">Проверяем выпуски GitHub…</string>
+    <string name="support_no_release">APK ещё не опубликован в выпусках. Повторите позже.</string>
+    <string name="support_latest">У вас актуальная версия: %1$s</string>
+    <string name="support_update_failed">Не удалось проверить выпуски. Проверьте интернет и повторите.</string>
+    <string name="support_update_ready">Доступно preview-обновление.</string>
+    <string name="support_copied">Отчёт скопирован.</string>
+    <string name="support_download">Скачать APK</string>
+    <string name="support_update_note">Проверка обращается к GitHub только по кнопке. Откройте скачанный APK в «Загрузках» и подтвердите установку Android. Обновляйте поверх приложения, чтобы сохранить настройки.</string>
+    <string name="widget_project_hidden">Проект не передан</string>
+    <string name="widget_decision_count">Ждут ответа: %1$d</string>
+    <string name="widget_wait_format">Ждёт %s</string>
 </resources>

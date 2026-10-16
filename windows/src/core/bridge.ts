@@ -197,6 +197,8 @@ export interface PhoneAnswersStatus {
 }
 
 export const Bridge = {
+  supportReport: () => call<string>("support_report"),
+  checkUpdates: () => invoke<{version:string;url:string;newer:boolean}|null>("support_update_check"),
   attentionState: () => call<number>("nova_attention_state"),
   systemSnapshot: () => callOrThrow<DoctorSnapshot>("nova_system_snapshot"),
   exportDoctorReport: (report: string) => callOrThrow<string>("nova_export_doctor_report", { report }),

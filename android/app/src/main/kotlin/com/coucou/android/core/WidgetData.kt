@@ -163,6 +163,7 @@ data class WidgetContent(
     val today: Int = 0,
     /** Mochi Big's plan usage: Claude then Codex, each with its main window; empty when the computer sends none or is not connected. */
     val usageRows: List<UsageRing> = emptyList(),
+    val decision: WaitingDecision? = null,
 ) {
     /** Which of the three things Mochi Big's right side shows. */
     val usageSide: UsageSide get() = when {

@@ -30,19 +30,19 @@ data class Tokens(
 ) {
     companion object {
         val DARK = Tokens(
-            bg = 0xFF101514, panel = 0xFF18201E, panel2 = 0xFF222E29, line = 0xFF303D38,
-            text = 0xFFF0F6F3, textDim = 0xFFADBDB5, textFaint = 0xFF8D9E95,
-            primaryButton = 0xFF7EDDBB, onPrimaryButton = 0xFF101514, secondaryButton = 0xFF2A3932,
-            danger = 0xFFFF8D97, online = 0xFF34D399, washAlpha = 0.5,
+            bg = 0xFF100F16, panel = 0xFF1B1824, panel2 = 0xFF262131, line = 0xFF40364D,
+            text = 0xFFF7F0E8, textDim = 0xFFB6AABD, textFaint = 0xFFA194AC,
+            primaryButton = 0xFFF4B38A, onPrimaryButton = 0xFF100F16, secondaryButton = 0xFF30283D,
+            danger = 0xFFFF8D97, online = 0xFF34D399, washAlpha = 0.16,
         )
     }
 }
 
 /** The black surfaces: the hero panel on Home and the island over other apps. */
 object IslandSurface {
-    const val BLACK = 0xFF101514L
-    const val PANEL = 0xFF18201EL
-    const val HERO = 0xFF101514L
+    const val BLACK = 0xFF100F16L
+    const val PANEL = 0xFF1B1824L
+    const val HERO = 0xFF100F16L
     const val TEXT = 0xFFF5F6F8L
     const val TEXT_DIM = 0xFF9398A1L
     /** Pill buttons on these always-dark surfaces. */

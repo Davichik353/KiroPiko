@@ -66,7 +66,16 @@ class TokensTest {
     }
 
     @Test fun theWashIsSoft() {
-        assertTrue(Tokens.DARK.washAlpha in 0.3..0.6)
+        assertTrue(Tokens.DARK.washAlpha in 0.08..0.20)
+        val t=Tokens.DARK
+        // Even a white idle wash must leave the panel's text readable.
+        var washed=0xFF000000L
+        for(shift in listOf(16,8,0)) {
+            val channel=(t.panel shr shift) and 255
+            val mixed=(channel+(255-channel)*t.washAlpha).toLong()
+            washed=washed or (mixed shl shift)
+        }
+        assertTrue(c(t.text,washed)>=7.0)
     }
 
     @Test fun spacingIsOneScaleOnAFourPointGrid() {

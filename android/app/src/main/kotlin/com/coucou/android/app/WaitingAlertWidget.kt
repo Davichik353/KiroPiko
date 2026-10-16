@@ -28,9 +28,14 @@ class WaitingAlertWidget : AppWidgetProvider() {
             v.setViewVisibility(R.id.alert_count, if (waiting) View.VISIBLE else View.GONE)
             v.setViewVisibility(R.id.alert_calm, if (waiting) View.GONE else View.VISIBLE)
             v.setTextViewText(if (waiting) R.id.alert_count else R.id.alert_calm, c.alertLine)
-            v.setTextViewText(R.id.alert_sub, c.alertSub)
+            val decision=c.decision.takeIf { c.connected && waiting }
+            v.setTextViewText(R.id.alert_sub, decision?.let { "${it.agent} · ${it.project ?: context.getString(R.string.widget_project_hidden)}" } ?: c.alertSub)
+            v.setTextViewText(R.id.alert_count, if(waiting) context.getString(R.string.widget_decision_count,c.waiting) else c.alertLine)
+            v.setViewVisibility(R.id.alert_clock,if(decision!=null && decision.sinceMs>0)View.VISIBLE else View.GONE)
+            val elapsed=(System.currentTimeMillis()-(decision?.sinceMs ?: System.currentTimeMillis())).coerceIn(0,7*24*60*60*1000L)
+            v.setChronometer(R.id.alert_clock,android.os.SystemClock.elapsedRealtime()-elapsed,context.getString(R.string.widget_wait_format),decision!=null && decision.sinceMs>0)
             if (waiting) v.setContentDescription(R.id.alert_count, context.getString(R.string.widget_badge_description, c.waiting))
-            v.setOnClickPendingIntent(R.id.alert_root, WidgetHub.openApp(context, WidgetHub.CODE_ALERT))
+            v.setOnClickPendingIntent(R.id.alert_root, decision?.let { WidgetHub.openSession(context,WidgetHub.CODE_ALERT,it.pillId) } ?: WidgetHub.openApp(context, WidgetHub.CODE_ALERT))
             return v
         }
     }

@@ -10,11 +10,11 @@
     "Microsoft YaHei", "Noto Sans", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Arabic",
     "Noto Sans CJK SC", "Noto Sans SC", "Droid Sans Fallback", sans-serif;
   --mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
-  --ink: #f5f6f8;
-  --dim: #9398a1;
-  --dim-2: #6b7079;
-  --bg: #0b0c0e;
-  --card: #141518;
+  --ink: #f7f0e8;
+  --dim: #b6aabd;
+  --dim-2: #a194ac;
+  --bg: #100f16;
+  --card: #1b1824;
   --hairline: rgba(255, 255, 255, 0.07);
   --green: #22c55e;
   --red: #f4505e;
@@ -76,6 +76,8 @@ section > h2 {
   font: 400 12px var(--font);
   color: var(--dim);
 }
+.support-report { width:100%; box-sizing:border-box; resize:vertical; padding:12px; color:var(--ink); background:#100f16; border:1px solid #40364d; border-radius:10px; font:12px/1.6 var(--mono); }
+.support-report:focus-visible { outline:2px solid #f4b38a; outline-offset:2px; }
 
 .row {
   display: flex;
@@ -122,12 +124,12 @@ button:active:not(:disabled) {
 }
 
 button.primary {
-  background: var(--ink);
-  color: #0b0c0e;
+  background: #f4b38a;
+  color: #100f16;
 }
 
 button.primary:hover:not(:disabled) {
-  background: #fff;
+  background: #ffcca8;
 }
 
 button.danger {
@@ -159,7 +161,7 @@ code,
 }
 
 .switch.on {
-  background: var(--green);
+  background: #f4b38a;
 }
 
 .switch::after {
@@ -175,6 +177,7 @@ code,
 }
 
 .switch.on::after {
+  background: #100f16;
   transform: translateX(16px);
 }
 

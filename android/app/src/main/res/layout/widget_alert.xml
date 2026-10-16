@@ -43,9 +43,9 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:gravity="center"
-            android:maxLines="1"
+            android:maxLines="2"
             android:textColor="@color/widget_tone_attention_text"
-            android:textSize="20sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:visibility="gone" />
 
@@ -68,8 +68,16 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:gravity="center"
-            android:maxLines="1"
+            android:maxLines="2"
             android:textColor="@color/widget_text_secondary"
             android:textSize="@dimen/widget_text_state" />
+        <Chronometer
+            android:id="@+id/alert_clock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="12sp"
+            android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

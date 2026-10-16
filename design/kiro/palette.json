@@ -1,0 +1,11 @@
+{
+  "name": "Apricot After Dark",
+  "background": "#100f16",
+  "panel": "#1b1824",
+  "raised": "#262131",
+  "border": "#40364d",
+  "text": "#f7f0e8",
+  "muted": "#b6aabd",
+  "accent": "#f4b38a",
+  "onAccent": "#100f16"
+}

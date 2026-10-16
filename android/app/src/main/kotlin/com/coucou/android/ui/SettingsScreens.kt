@@ -139,6 +139,8 @@ fun SettingsScreen(model: AppModel, onHistory: () -> Unit, onGallery: () -> Unit
         verticalArrangement = Arrangement.spacedBy(Gap),
     ) {
         item { ScreenTitle(stringResource(R.string.settings_title), null) }
+        item { SectionHeading(stringResource(R.string.support_title)) }
+        item { SupportCard(model) }
 
         item { SectionHeading(stringResource(R.string.settings_section_computer)) }
         item {

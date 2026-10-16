@@ -81,7 +81,7 @@ class WidgetPreviewTest {
     @Test fun theNamesAreTheOnesInTheBrief() {
         val expected = mapOf(
             "widget_solo_label" to "Kiro at a glance", "widget_list_label" to "All your agents", "widget_big_label" to "Kiro, big",
-            "widget_pill_label" to "One-line status", "widget_alert_label" to "Approvals waiting", "widget_ring_label" to "Plan usage",
+            "widget_pill_label" to "One-line status", "widget_alert_label" to "Needs your decision", "widget_ring_label" to "Plan usage",
             "widget_today_label" to "Finished today", "widget_mood_label" to "Kiro's mood", "widget_glance_label" to "Agents summary",
         )
         for ((k, v) in expected) assertEquals(k, v, strings[k])
@@ -178,7 +178,7 @@ class WidgetPreviewTest {
             val face = read(res + "drawable/preview_face_$state.xml")
             val glow = read(res + "drawable/preview_glow_$state.xml")
             val mark = read(res + "drawable/preview_mochi_$state.xml")
-            assertTrue(face.contains("<vector") && face.contains("#FF7EDDBB"))
+            assertTrue(face.contains("<vector") && face.contains("#" + com.coucou.android.core.Palette.DARK.accent.toUInt().toString(16).uppercase()))
             assertFalse(face.contains("#EDEDEF") || face.contains("#C4C5CA"))
             assertTrue(glow.contains(hex(tone)))
             assertTrue(mark.indexOf("preview_glow_$state") in 0 until mark.indexOf("preview_face_$state"))
@@ -187,7 +187,7 @@ class WidgetPreviewTest {
 
     @Test fun theBadgesAreTheOnesOfTheStates() {
         for ((state, tone) in states) {
-            assertTrue(read(res + "drawable/preview_face_$state.xml").contains("#FF7EDDBB"))
+            assertTrue(read(res + "drawable/preview_face_$state.xml").contains("#" + com.coucou.android.core.Palette.DARK.accent.toUInt().toString(16).uppercase()))
             assertTrue(read(res + "drawable/preview_glow_$state.xml").contains(hex(tone)))
         }
     }

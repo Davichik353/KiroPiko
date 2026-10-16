@@ -12,16 +12,16 @@
     "Noto Sans Arabic", "Noto Sans CJK SC", "Noto Sans SC", "Droid Sans Fallback", sans-serif;
   --mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
 
-  --ink: #f5f6f8;        /* primary text */
+  --ink: #f7f0e8;        /* primary text */
   --ink-2: #f1f2f4;
-  --dim: #9398a1;
+  --dim: #b6aabd;
   --dim-2: #8e939c;
   --dim-3: #6b7079;
   --dim-4: #5f646d;
   --dim-5: #4b5563;
-  --card: #141518;
-  --card-flat: #0e0f11;
-  --tab-on: #1d1f23;
+  --card: #1b1824;
+  --card-flat: #100f16;
+  --tab-on: #30283d;
   --hairline: rgba(255, 255, 255, 0.035);
   --red: #f4505e;
   --red-text: #ff8d97;
@@ -1354,8 +1354,8 @@ input[type="range"]::-webkit-slider-thumb {
   flex: 0 0 28px;
   border: 0;
   border-radius: 50%;
-  background: var(--ink);
-  color: #0b0c0e;
+  background: #f4b38a;
+  color: #100f16;
   display: grid;
   place-items: center;
   cursor: default;

@@ -16,6 +16,7 @@ mod integrations;
 mod island;
 mod local_chat;
 mod log;
+mod support;
 mod net;
 mod nova_doctor;
 mod notebook;
@@ -476,7 +477,7 @@ async fn chat_send(
     model_override: Option<String>,
 ) -> Result<ChatReply, String> {
     let settings = chat::auto_settings(&shared.settings.lock().unwrap().clone(), model_override)?;
-    chat::send(&app, &chat, &settings, query, context).await
+    chat::send(&app, &chat, &settings, query, context).await.inspect_err(|_| log::line("chat failed"))
 }
 
 /// The models a provider offers, for the picker in the chat view. Only asked
@@ -484,7 +485,7 @@ async fn chat_send(
 #[tauri::command]
 async fn chat_models(shared: State<'_, Shared>, provider: String) -> Result<Vec<ModelInfo>, String> {
     let settings = shared.settings.lock().unwrap().clone();
-    chat::models(&settings, &provider).await
+    chat::models(&settings, &provider).await.inspect_err(|_| log::line("model list failed"))
 }
 
 /// Settings → Local models → Connect: does the server answer, and with which models?
@@ -690,6 +691,8 @@ pub fn run() {
         .manage(shortcuts::Registry::default())
         .manage(recap::load())
         .invoke_handler(tauri::generate_handler![
+            support::support_report,
+            support::support_update_check,
             nova_doctor::nova_system_snapshot,
             nova_windows::nova_attention_state,
             notebook::notebook_open,

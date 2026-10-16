@@ -19,6 +19,7 @@ import {
 import { h, clear } from "../views/dom";
 import { agentsSection } from "./agents";
 import { phoneSection } from "./phone";
+import { supportSection } from "./support";
 import { colorDot } from "./colors";
 import { renderDiff, statusDot } from "./parts";
 import {
@@ -1403,6 +1404,7 @@ async function render() {
       h("p", { text: "Внешний вид и выбор персонажей сохраняются в этом браузере. Подключение агентов, API-ключи и системные функции работают в приложении Windows." }),
       h("button", { class: "btn", text: "← Вернуться к KiroPiko", onclick: () => window.location.assign("/") })) : document.createTextNode(""),
     novaPermissions(),
+    supportSection(version),
     claudeSection(status),
     agentsSection(agents),
     planSection(status),

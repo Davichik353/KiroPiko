@@ -1,6 +1,6 @@
 # KiroPiko Android preview
 
-Test APK: `release/KiroPiko-Android-0.1.1-preview.apk`. Android 11+. Russian follows the phone language; English is the fallback. This is a debug-signed local test build, not a store release. Pairing, chat and approvals have not yet been checked on a physical phone in this workspace.
+Test APK: `release/KiroPiko-Android-0.1.2-preview.apk`. Android 11+. Russian follows the phone language; English is the fallback. This is a debug-signed local test build, not a store release. Pairing, chat and approvals have not yet been checked on a physical phone in this workspace.
 
 Based on Coucou by Louis Raillé and Android code by Rhytam Biswas (MIT). Internal package namespaces and the coucou://pair protocol remain compatible; the installed application ID is com.kiropiko.android.
 
@@ -70,7 +70,7 @@ The desktop side is in `windows/src-tauri/src/phone_link`; the protocol is `docs
   - *All your agents* (List, 4x3): one row of at least 48dp per agent (Kiro's face, name, state word, dot), up to five, with a badge for what waits for you; with no agent, a centred empty state ("Waiting for your computer" / "No agents running").
   - *Kiro, big* (4x4): no speech bubble any more. On the left Kiro with his glow and badge, then the agent's name and state word; on the right your plan usage (Claude and Codex, each with a thin bar that is teal, yellow from 75% and red from 90%, and a small percentage that becomes big and bold with "Near limit" from 90%), or "Plan usage is off" (a tap opens Settings) or "Not connected". Under them rounded buttons: two rows of three (Home, Chat, Settings, Recent, Top agent, Pair again; tinted orange while something waits), one row of four when medium, none when small.
   - *One-line status* (Status Pill, 4x1): one slim line with a dot, the agent's name and its state word, and four round buttons that open Home, Chat, Settings and Recent decisions. Narrower, the state word goes first, then the name; the text never runs under the buttons.
-  - *Approvals waiting* (Waiting Alert, 2x2): calm when nothing waits, a bright orange "N waiting" when something does. A tap opens the app and the sheet rises by itself.
+  - *Needs your decision* (Waiting Alert, 2x2): shows the oldest waiting agent, the project shared by the desktop and a system chronometer. A tap opens that session; permissions are still decided inside the app with the existing biometric check.
   - *Plan usage* (Usage Ring, 2x2): a ring for your Claude or Codex plan usage; "Turn on plan usage in the app" when it is off.
   - *Finished today* (Today, 2x2): agent tasks finished today, counted on this phone only and started again at local midnight by one inexact alarm (no exact-alarm permission, no wake-ups).
   - *Kiro's mood* (Mood, 1x1): just his face.

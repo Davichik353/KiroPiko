@@ -80,6 +80,8 @@ class AppModel(private val context: Context) : LinkListener {
     var desktopName by mutableStateOf<String?>(null); private set
     var sessions by mutableStateOf<List<SessionInfo>>(emptyList()); private set
     var approvals by mutableStateOf<List<ApprovalRequest>>(emptyList()); private set
+    private var supportChatErrors=0
+    private var supportLinkErrors=0
     /** Questions Claude Code asks that this phone may answer (only with the `answers` capability); kept in memory, never written. */
     var questions by mutableStateOf<List<QuestionRequest>>(emptyList()); private set
     var message by mutableStateOf<String?>(null)
@@ -337,7 +339,12 @@ class AppModel(private val context: Context) : LinkListener {
 
     /** What the Widgets draw now: the glance, the sessions, the plan usage the computer sent and today's finished tasks. */
     fun widgetContent(g: com.coucou.android.core.Glance = glance()): com.coucou.android.core.WidgetContent =
-        com.coucou.android.core.WidgetData.build(g, sessions, this::agentName, usage, todayCounter.count(), System.currentTimeMillis())
+        com.coucou.android.core.WidgetData.build(g, sessions, this::agentName, usage, todayCounter.count(), System.currentTimeMillis()).let { content ->
+            if (!content.connected) content else content.copy(
+                waiting=maxOf(content.waiting,approvals.size+questions.size),
+                decision=com.coucou.android.core.WaitingDecisions.first(approvals,questions,sessions,this::agentName),
+            )
+        }
 
     /** The small surfaces follow every change of sessions, requests and link; none of them runs a timer. */
     private fun pushGlance() {
@@ -544,6 +551,19 @@ class AppModel(private val context: Context) : LinkListener {
         return Diagnostics.report(version, Build.VERSION.RELEASE, "${Build.MANUFACTURER} ${Build.MODEL}", diagResults, p?.let { Diagnostics.maskHost(it.host) } ?: "none", via)
     }
 
+    /** Allowlisted categories only: never include raw exceptions, addresses or message text. */
+    fun supportReport():String = buildString {
+        val version=runCatching { context.packageManager.getPackageInfo(context.packageName,0).versionName }.getOrNull() ?: "?"
+        appendLine("KiroPiko support v1 / Android")
+        appendLine("App: $version / Android: ${Build.VERSION.SDK_INT}")
+        appendLine("Connection: ${linkState.name}")
+        appendLine("Failures since launch: AI=$supportChatErrors / link=$supportLinkErrors")
+        appendLine("Sessions: ${sessions.size} / approvals: ${approvals.size} / questions: ${questions.size}")
+        appendLine("Agent failures: ${sessions.count { it.state == com.coucou.android.mochi.BotState.ERROR || it.state == com.coucou.android.mochi.BotState.RATELIMIT }}")
+        for((step,result) in diagResults) appendLine("${step.name}: ${when(result) { is com.coucou.android.link.DiagResult.Ok -> "OK";is com.coucou.android.link.DiagResult.Problem -> "FAILED";else -> "SKIPPED" }}")
+        append("Keys, pairing codes, addresses, names, commands and messages excluded. Nothing is uploaded.")
+    }
+
     private fun onNetworkChanged(wifiUp: Boolean) {
         if (mode != Mode.PAIRED) return
         if (!wifiUp) { finder.stop(); return } // no Wi-Fi: nothing to scan
@@ -718,7 +738,7 @@ class AppModel(private val context: Context) : LinkListener {
     }
 
     override fun onChatError(id: String, reason: String, message: String) {
-        main.post { chatSession.onError(id, reason); chatChanged(save = true) }
+        main.post { supportChatErrors++; chatSession.onError(id, reason); chatChanged(save = true) }
     }
 
     override fun onSessions(sessions: List<SessionInfo>) {
@@ -874,6 +894,7 @@ class AppModel(private val context: Context) : LinkListener {
 
     override fun onError(code: String, message: String) {
         main.post {
+            supportLinkErrors++
             this.message = if (code == "auth") context.getString(R.string.msg_rejected)
             else "${context.getString(R.string.msg_link_error)}: $message"
         }
