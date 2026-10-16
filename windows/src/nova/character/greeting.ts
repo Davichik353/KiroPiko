@@ -1,5 +1,7 @@
 import { Greeting } from "../../mochi/greeting";
-import { drawSprite } from "./sprites";
+import { drawAvatar } from "./avatar";
+import { State } from "../../core/state";
+import { parseOutfit, resolveOutfit } from "../../mochi/wardrobe";
 
 export class NovaGreeting extends Greeting {
   override draw(ctx: CanvasRenderingContext2D) {
@@ -7,7 +9,7 @@ export class NovaGreeting extends Greeting {
     const t = this.elapsed;
     ctx.save();
     ctx.translate(26, 18 + Math.sin(Math.min(t, 1) * Math.PI) * -10);
-    drawSprite(ctx, 1, 110, 110);
+    drawAvatar(ctx, 1, State.wardrobePreview ?? resolveOutfit(parseOutfit(State.settings.mochiOutfit), new Date()), 110, 110);
     ctx.restore();
     ctx.fillStyle = "#f5f3ff";
     ctx.font = "600 20px Segoe UI, sans-serif";

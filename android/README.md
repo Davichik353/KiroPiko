@@ -1,6 +1,6 @@
 # KiroPiko Android preview
 
-Test APK: `release/KiroPiko-Android-0.1.0-preview.apk`. Android 11+. Russian follows the phone language; English is the fallback. This is a debug-signed local test build, not a store release. Pairing, chat and approvals have not yet been checked on a physical phone in this workspace.
+Test APK: `release/KiroPiko-Android-0.1.1-preview.apk`. Android 11+. Russian follows the phone language; English is the fallback. This is a debug-signed local test build, not a store release. Pairing, chat and approvals have not yet been checked on a physical phone in this workspace.
 
 Based on Coucou by Louis Raillé and Android code by Rhytam Biswas (MIT). Internal package namespaces and the coucou://pair protocol remain compatible; the installed application ID is com.kiropiko.android.
 

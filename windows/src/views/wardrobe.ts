@@ -4,8 +4,7 @@
 
 import { h } from "./dom";
 import { State } from "../core/state";
-import { drawSprite, drawHolidaySprite } from "../nova/character/sprites";
-import { drawAccessory } from "../nova/character/accessories";
+import { drawAvatar } from "../nova/character/avatar";
 import {
   OUTFIT_KEYS, OUTFIT_SELECTIONS, parseOutfit, resolveOutfit, seasonalOutfit,
   wardrobeHeader, type Outfit, type OutfitSelection,
@@ -82,10 +81,8 @@ export function buildWardrobe(actions: ViewActions): ViewHost {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, ICON, ICON);
       const outfit = sel === "auto" ? season : sel;
-      if (!drawHolidaySprite(ctx, outfit, ICON, ICON, false)) {
-        drawSprite(ctx, 0, ICON, ICON);
-        drawAccessory(ctx, outfit, ICON, ICON, false);
-      }
+      drawAvatar(ctx, 0, outfit, ICON, ICON);
+
     }
   };
 

@@ -53,7 +53,7 @@ class MochiBigWidget : AppWidgetProvider() {
             val small = size == WidgetHub.Size.SMALL
 
             // Left: Mochi with his glow, then the agent and its state word.
-            v.setImageViewBitmap(R.id.big_mochi, MochiBitmap.of(c.mood, WidgetHub.px(context, if (large) 170 else if (small) 120 else 140), glow = true, tone = c.look))
+            v.setImageViewBitmap(R.id.big_mochi, MochiBitmap.of(c.mood, WidgetHub.px(context, if (large) 170 else if (small) 120 else 140), glow = true, tone = c.look, outfit = WidgetHub.outfit(context)))
             v.setContentDescription(R.id.big_mochi, context.getString(R.string.widget_mochi_description, (top?.stateWord ?: c.headline).lowercase()))
             // Not connected: the "not connected" icon instead of the dot, and the headline instead of an agent.
             v.setViewVisibility(R.id.big_offline, if (c.connected) View.GONE else View.VISIBLE)

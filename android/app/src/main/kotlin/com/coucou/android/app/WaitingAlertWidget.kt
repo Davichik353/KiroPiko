@@ -21,7 +21,7 @@ class WaitingAlertWidget : AppWidgetProvider() {
         fun views(context: Context, c: WidgetContent): RemoteViews {
             val v = RemoteViews(context.packageName, R.layout.widget_alert)
             WidgetHub.paint(v, R.id.alert_root, R.id.alert_tint, c.look)
-            v.setImageViewBitmap(R.id.alert_face, MochiBitmap.of(c.mood, WidgetHub.px(context, 84), glow = true, tone = c.look))
+            v.setImageViewBitmap(R.id.alert_face, MochiBitmap.of(c.mood, WidgetHub.px(context, 84), glow = true, tone = c.look, outfit = WidgetHub.outfit(context)))
             v.setContentDescription(R.id.alert_face, context.getString(R.string.widget_mochi_description, c.mood.key))
             v.setViewVisibility(R.id.alert_offline, if (c.connected) View.GONE else View.VISIBLE)
             val waiting = c.waiting > 0

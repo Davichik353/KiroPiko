@@ -1,4 +1,5 @@
-import { drawSprite } from "../nova/character/sprites";
+import { drawAvatar } from "../nova/character/avatar";
+import { parseOutfit, resolveOutfit } from "../mochi/wardrobe";
 import { UPLOAD_BUTTONS, createUploadButtons, type UploadCanvasActions } from "./actions";
 // The upload canvas — port of UploadCanvasView.swift.
 //
@@ -335,9 +336,10 @@ export class UploadCanvas {
     ctx.save();
     ctx.translate(f.x, f.y + f.hop);
     ctx.rotate(f.tilt);
-    ctx.scale(f.sx, f.sy);
+    const scale = Math.max(.85, Math.min(1.15, (f.sx + f.sy) / 2));
+    ctx.scale(scale, scale);
     ctx.translate(-f.d, -f.d);
-    drawSprite(ctx, f.eye === "content" ? 2 : 3, f.d * 2, f.d * 2);
+    drawAvatar(ctx, f.eye === "content" ? 2 : 3, State.wardrobePreview ?? resolveOutfit(parseOutfit(State.settings.mochiOutfit), new Date()), f.d * 2, f.d * 2);
     ctx.restore();
   }
   // ── The file, and the suction ─────────────────────────────────────────────

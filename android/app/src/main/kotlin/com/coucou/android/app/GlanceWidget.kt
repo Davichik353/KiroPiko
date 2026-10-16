@@ -60,7 +60,7 @@ class GlanceWidget : AppWidgetProvider() {
             WidgetHub.paint(v, R.id.widget_root, R.id.glance_tint, tone)
 
             val mood = g.mood()
-            v.setImageViewBitmap(R.id.glance_mochi, MochiBitmap.of(mood, WidgetHub.px(context, 64), glow = true, tone = tone))
+            v.setImageViewBitmap(R.id.glance_mochi, MochiBitmap.of(mood, WidgetHub.px(context, 64), glow = true, tone = tone, outfit = WidgetHub.outfit(context)))
             v.setContentDescription(R.id.glance_mochi, context.getString(R.string.widget_mochi_description, mood.key))
 
             v.setViewVisibility(R.id.glance_offline, if (g.connected) View.GONE else View.VISIBLE)

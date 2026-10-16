@@ -10,20 +10,25 @@ import android.graphics.RectF
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import com.coucou.android.mochi.outfit.Outfit
-import kotlin.math.min
 import kotlin.math.sin
 
 /** KiroPiko's own illustrations; the original engine keeps agent/touch lifecycle semantics. */
 object KiroPainter {
     private var states: Bitmap? = null
     private var holidays: Bitmap? = null
+    private var sleepingHolidays: Bitmap? = null
+    private var ledge: Bitmap? = null
+    private var rig: KiroRig? = null
+    private val paths = mutableMapOf<String, Path>()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
     fun load(context: Context) {
         if (states != null) return
         states = context.assets.open("kiro/kiro-mint-states.png").use { BitmapFactory.decodeStream(it) }
         holidays = context.assets.open("kiro/kiro-holidays.png").use { BitmapFactory.decodeStream(it) }
+        sleepingHolidays = context.assets.open("kiro/kiro-holidays-sleep.png").use { BitmapFactory.decodeStream(it) }
+        ledge = context.assets.open("kiro/kiro-mint-ledge.png").use { BitmapFactory.decodeStream(it) }
+        rig = KiroRig(org.json.JSONObject(context.assets.open("kiro/wardrobe-rig.json").bufferedReader().use { it.readText() }))
     }
 
     fun frame(state: BotState, emote: BotEmote?): Int = when {
@@ -37,7 +42,7 @@ object KiroPainter {
         else -> 0
     }
 
-    fun DrawScope.drawKiro(e: MochiEngine, nowSec: Double) {
+    fun DrawScope.drawKiro(e: MochiEngine, nowSec: Double, bust: Boolean = false) {
         val base = states ?: return
         val face = e.permanentEmote ?: when (e.eyeOverride ?: e.permanentEye) {
             EyeShape.HAPPY -> BotEmote.HAPPY
@@ -50,20 +55,17 @@ object KiroPainter {
             else -> null
         }
         val index = frame(e.state, face)
-        val costume = listOf(Outfit.WITCH_HAT, Outfit.PUMPKIN, Outfit.SANTA_HAT, Outfit.PARTY_HAT).indexOf(e.outfit)
-        val useHoliday = costume >= 0 && holidays != null && index == 0 && !e.isMini
-        val bitmap = if (useHoliday) holidays!! else base
-        val cw = bitmap.width / if (useHoliday) 4 else 3
-        val ch = bitmap.height / if (useHoliday) 2 else 3
-        val col = if (useHoliday) costume else index % 3
-        val row = if (useHoliday) 1 else index / 3
-        // Atlas cells contain different transparent margins. Register the visible
-        // illustration, rather than stretching the whole cell into a square.
-        val bounds = if (useHoliday) holidayBounds[costume] else stateBounds[index]
-        val side = min(size.width, size.height) * .80f
-        val drawnWidth = side * bounds.width() / bounds.height()
-        val left = (size.width - drawnWidth) / 2
-        val top = size.height * .94f - side
+        val layout = rig ?: return
+        val outfit = if (e.isMini) "none" else e.outfit.id
+        val costume = layout.holidayOutfits.indexOf(outfit)
+        val useHoliday = costume >= 0 && holidays != null
+        val sleepingCostume = useHoliday && index == 5 && sleepingHolidays != null
+        val bitmap = if (sleepingCostume) sleepingHolidays!! else if (useHoliday) holidays!! else if (bust && ledge != null) ledge!! else base
+        val pose = if (sleepingCostume) (if (bust) layout.sleepingHolidayBust else layout.sleepingHolidayFull)[costume]
+            else if (useHoliday) (if (bust) layout.holidayBust else layout.holidayFull)[costume]
+            else if (bust && ledge != null) layout.ledge[when (index) { 0 -> 0; 6, 7 -> 1; 3, 4 -> 2; 5 -> 4; else -> 3 }]
+            else layout.states[index]
+        val placement = layout.place(pose, size.width, size.height, bust)
         drawIntoCanvas { canvas ->
             val c = canvas.nativeCanvas
             c.save()
@@ -71,36 +73,60 @@ object KiroPainter {
             val breath = (sin(nowSec * 1.65) * .006).toFloat()
             c.scale(1f, 1f + breath)
             c.translate(-size.width / 2, -size.height * .8f)
-            c.drawBitmap(bitmap, Rect(col * cw + bounds.left, row * ch + bounds.top, col * cw + bounds.right, row * ch + bounds.bottom), RectF(left, top, left + drawnWidth, top + side), paint)
-            if (!useHoliday && !e.isMini) accessories(c, e.outfit, left, top, drawnWidth, side)
+            if (!useHoliday) accessories(c, outfit, pose, placement, "behind")
+            for (r in pose.regions ?: listOf(pose.rect)) {
+                val left=placement.originX+r[0]*placement.scale; val top=placement.originY+r[1]*placement.scale
+                c.drawBitmap(bitmap, Rect(r[0].toInt(), r[1].toInt(), (r[0]+r[2]).toInt(), (r[1]+r[3]).toInt()), RectF(left, top, left+r[2]*placement.scale, top+r[3]*placement.scale), paint)
+            }
+            if (!useHoliday) accessories(c, outfit, pose, placement, "front")
             c.restore()
         }
     }
 
-    private val stateBounds = arrayOf(Rect(105,16,341,398), Rect(96,17,337,398), Rect(91,17,334,398), Rect(103,7,351,399), Rect(92,9,338,399), Rect(100,10,346,399), Rect(101,9,347,395), Rect(81,11,348,395), Rect(81,10,331,395))
-    private val holidayBounds = arrayOf(Rect(89,4,401,433), Rect(109,4,374,433), Rect(93,4,377,434), Rect(95,4,348,433))
-
-    private fun accessories(c: android.graphics.Canvas, outfit: Outfit, left: Float, top: Float, width: Float, height: Float) {
-        c.save(); c.translate(left, top); c.scale(width / 100f, height / 100f)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.rgb(126, 221, 187) }
-        when (outfit) {
-            Outfit.CROWN -> { p.color = 0xFFFFD56A.toInt(); c.drawPath(Path().apply { moveTo(33f, 17f); lineTo(30f, 5f); lineTo(42f, 11f); lineTo(50f, 1f); lineTo(58f, 11f); lineTo(70f, 5f); lineTo(67f, 17f); close() }, p) }
-            Outfit.SUNGLASSES, Outfit.ROUND_GLASSES -> {
-                p.color = 0xFF263B35.toInt(); p.style = if (outfit == Outfit.ROUND_GLASSES) Paint.Style.STROKE else Paint.Style.FILL; p.strokeWidth = 1.6f
-                c.drawOval(24f, 32f, 47f, 43f, p); c.drawOval(55f, 32f, 78f, 43f, p); c.drawLine(47f, 37f, 55f, 37f, p)
+    private fun path(source: String): Path = paths.getOrPut(source) {
+        val tokens = Regex("[A-Za-z]|-?[0-9]+(?:\\.[0-9]+)?").findAll(source).map { it.value }.toList()
+        var i = 0
+        fun number() = tokens[i++].toFloat()
+        Path().apply {
+            while (i < tokens.size) {
+                when (val command = tokens[i++]) {
+                    "M" -> moveTo(number(), number())
+                    "L" -> lineTo(number(), number())
+                    "Q" -> quadTo(number(), number(), number(), number())
+                    "C" -> cubicTo(number(), number(), number(), number(), number(), number())
+                    "Z" -> close()
+                    else -> error("Unsupported Kiro path command: $command")
+                }
             }
-            Outfit.BEANIE -> { c.drawOval(14f, -3f, 86f, 18f, p); c.drawRoundRect(14f, 12f, 86f, 18f, 3f, 3f, p); c.drawCircle(50f, -3f, 4f, p) }
-            Outfit.SCARF -> { c.drawRoundRect(30f, 49f, 72f, 54f, 2f, 2f, p); c.drawRoundRect(60f, 52f, 69f, 65f, 2f, 2f, p) }
-            Outfit.BOW -> { p.color = 0xFFEB9BAE.toInt(); c.drawOval(24f, 16f, 35f, 25f, p); c.drawOval(34f, 16f, 45f, 25f, p); c.drawCircle(34f, 21f, 3f, p) }
-            Outfit.BUNNY_EARS -> { p.color = 0xFFF0F6F3.toInt(); c.drawOval(18f, -12f, 32f, 9f, p); c.drawOval(68f, -12f, 82f, 9f, p) }
-            Outfit.WITCH_HAT, Outfit.PARTY_HAT, Outfit.SANTA_HAT -> {
-                p.color = if (outfit == Outfit.WITCH_HAT) 0xFF78529F.toInt() else if (outfit == Outfit.SANTA_HAT) 0xFFD85866.toInt() else 0xFF7EDDBB.toInt()
-                c.drawPath(Path().apply { moveTo(29f, 16f); lineTo(52f, 0f); lineTo(73f, 16f); close() }, p)
-                if (outfit == Outfit.WITCH_HAT) c.drawOval(22f, 13f, 80f, 19f, p)
-            }
-            Outfit.PUMPKIN -> { p.color = 0xFFF3A54F.toInt(); c.drawRoundRect(38f, 66f, 66f, 78f, 6f, 6f, p) }
-            else -> Unit
         }
-        c.restore()
+    }
+
+    private fun accessories(c: android.graphics.Canvas, outfit: String, pose: KiroPose, placement: KiroPlacement, layer: String) {
+        val pieces = rig?.pieces?.optJSONArray(outfit) ?: return
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND }
+        for (i in 0 until pieces.length()) {
+            val shape = pieces.getJSONObject(i)
+            if (shape.getString("layer") != layer) continue
+            val neck = shape.getString("anchor") == "neck"
+            val anchor = if (neck) pose.neck else pose.eye
+            c.save()
+            c.translate(placement.originX + anchor[0]*placement.scale, placement.originY + anchor[1]*placement.scale)
+            if (!neck) c.rotate(Math.toDegrees(pose.angle.toDouble()).toFloat())
+            c.scale(placement.eyeSpan/100f, placement.eyeSpan/100f)
+            val geometry = if (shape.has("path")) path(shape.getString("path")) else Path().apply {
+                if (shape.has("ellipse")) {
+                    val e = shape.getJSONArray("ellipse"); val x=e.getDouble(0).toFloat(); val y=e.getDouble(1).toFloat(); val rx=e.getDouble(2).toFloat(); val ry=e.getDouble(3).toFloat()
+                    addOval(x-rx,y-ry,x+rx,y+ry,Path.Direction.CW)
+                }
+                if (shape.has("rect")) {
+                    val r=shape.getJSONArray("rect"); val x=r.getDouble(0).toFloat(); val y=r.getDouble(1).toFloat(); val w=r.getDouble(2).toFloat(); val h=r.getDouble(3).toFloat(); val radius=r.getDouble(4).toFloat()
+                    addRoundRect(x,y,x+w,y+h,radius,radius,Path.Direction.CW)
+                }
+            }
+            val fill=shape.getString("fill"); val stroke=shape.getString("stroke")
+            if (fill != "none") { p.style=Paint.Style.FILL; p.color=android.graphics.Color.parseColor(fill); c.drawPath(geometry,p) }
+            if (stroke != "none" && shape.getDouble("lineWidth") > 0) { p.style=Paint.Style.STROKE; p.strokeWidth=shape.getDouble("lineWidth").toFloat(); p.color=android.graphics.Color.parseColor(stroke); c.drawPath(geometry,p) }
+            c.restore()
+        }
     }
 }

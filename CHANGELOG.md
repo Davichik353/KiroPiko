@@ -1,5 +1,11 @@
 # Changelog
 
+## KiroPiko Windows 0.4.1 / Android 0.1.1-preview — 2026-10-16
+
+- Единая разметка гардероба для ПК, телефона и Android-виджетов.
+- Отдельные кадры сна четырёх праздничных костюмов: закрытые глаза и расслабленные руки, без прямоугольных накладок на животе.
+- Полные поля шляпы, общий масштаб лица и сохранение выбранного образа при переходах.
+
 ## Unreleased
 
 - **Flow dictation** *(macOS, GitHub build)* — hold a key anywhere on the Mac (right ⌥ by default, or right ⌘, right ⌃ or fn), speak, let go: your words are pasted where you type, like Wispr Flow. A small pill at the bottom of the screen shows Mochi listening, its nine dots rising and falling with the graves and the aigus of your voice. Two quick taps keep it listening hands-free until the next tap; Esc cancels. Speech is recognised by the Mac (on-device when it can), and the clipboard gets back what it held after the paste. Off by default — Settings → Voice; it needs the Accessibility permission to see the key and paste

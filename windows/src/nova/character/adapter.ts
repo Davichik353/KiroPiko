@@ -1,6 +1,6 @@
 import { BotEngine } from "../../mochi/engine";
-import { drawSprite, drawServiceSprite, drawPlaySprite, drawHolidaySprite, spriteIndex } from "./sprites";
-import { drawAccessory } from "./accessories";
+import { drawServiceSprite, drawPlaySprite, spriteIndex } from "./sprites";
+import { drawAvatar } from "./avatar";
 import { State } from "../../core/state";
 import { interactionMode } from "./state";
 import { drawFootball, playMotion, type PlayActivity } from "./play";
@@ -53,12 +53,12 @@ export class NovaCharacter extends BotEngine {
     ctx.scale(1, 1 + breath * 0.004);
     ctx.translate(-width / 2, -height / 2);
     const serviceDrawn = this.serviceId && drawServiceSprite(ctx, this.serviceId, width, height);
-    const playDrawn = this.activity && drawPlaySprite(ctx, this.activity, playTime, width, height, this.outfit);
-    // Ledge expressions share one registered body; keep its accessories attached
-    // rather than swapping to a differently cropped holiday bust on idle.
-    const holidayDrawn = !this.peeking && !serviceDrawn && !playDrawn && drawHolidaySprite(ctx, this.outfit, width, height, false);
-    if (!serviceDrawn && !playDrawn && !holidayDrawn) drawSprite(ctx, index, width, height, this.peeking, this.open < 0.55);
-    if (!this.isMini && !serviceDrawn && !holidayDrawn && !(playDrawn && this.outfit === "witchHat")) drawAccessory(ctx, this.outfit, width, height, this.peeking, index);
+    // Dedicated profile/play sheets exist only for the base and witch outfits.
+    // Other outfits keep their complete registered art instead of losing clothes.
+    const dedicated = this.outfit === "none" || this.outfit === "witchHat";
+    const playDrawn = this.activity && dedicated && drawPlaySprite(ctx, this.activity, playTime, width, height, this.outfit);
+    if (!serviceDrawn && !playDrawn) drawAvatar(ctx, index, this.isMini ? "none" : this.outfit, width, height, this.peeking,
+      this.activity && !reduced ? playMotion(this.activity, playTime) : undefined);
     ctx.restore();
     if (this.activity === "football") drawFootball(ctx, width, height, playTime);
     ctx.restore();

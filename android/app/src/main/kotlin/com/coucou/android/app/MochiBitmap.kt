@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.coucou.android.core.WidgetTone
+import com.coucou.android.mochi.outfit.Outfit
 import com.coucou.android.mochi.BotState
 import com.coucou.android.mochi.MochiEngine
 import com.coucou.android.mochi.MochiPainter.drawMochi
@@ -33,7 +34,7 @@ object MochiBitmap {
     private const val GLOW_ALPHA = 0.55f
     private const val GLOW_ALPHA_MUTED = 0.32f
 
-    private data class Key(val state: BotState, val size: Int, val glow: Boolean, val tone: WidgetTone)
+    private data class Key(val state: BotState, val size: Int, val glow: Boolean, val outfit: Outfit, val tone: WidgetTone)
 
     private val cache = object : LinkedHashMap<Key, Bitmap>(16, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Key, Bitmap>) = size > KEEP
@@ -44,14 +45,14 @@ object MochiBitmap {
      * state), so the Widget and its Mochi always share one colour. The same instance comes back while it is kept.
      */
     @Synchronized
-    fun of(state: BotState, sizePx: Int, glow: Boolean = false, tone: WidgetTone = WidgetTone.of(state)): Bitmap {
-        val key = Key(state, sizePx, glow, tone)
-        return cache.getOrPut(key) { draw(state, sizePx, glow, tone) }
+    fun of(state: BotState, sizePx: Int, glow: Boolean = false, tone: WidgetTone = WidgetTone.of(state), outfit: Outfit = Outfit.NONE): Bitmap {
+        val key = Key(state, sizePx, glow, outfit, tone)
+        return cache.getOrPut(key) { draw(state, sizePx, glow, tone, outfit) }
     }
 
-    private fun draw(state: BotState, sizePx: Int, glow: Boolean, tone: WidgetTone): Bitmap {
+    private fun draw(state: BotState, sizePx: Int, glow: Boolean, tone: WidgetTone, outfit: Outfit): Bitmap {
         var ms = 0.0
-        val engine = MochiEngine({ ms }, Random(SEED)).apply { setState(state, force = true) }
+        val engine = MochiEngine({ ms }, Random(SEED)).apply { setState(state, force = true); setOutfit(outfit, animated = false) }
         repeat(SETTLE_FRAMES) {
             ms += FRAME_SEC * 1000
             engine.update(FRAME_SEC)

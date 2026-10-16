@@ -137,9 +137,11 @@ class AppModel(private val context: Context) : LinkListener {
     var settings by mutableStateOf(UserSettings.load(kv)); private set
 
     fun updateSettings(next: UserSettings) {
+        val outfitChanged = settings.outfit != next.outfit
         val relayChanged = next.useRelay != settings.useRelay
         settings = next
         UserSettings.save(kv, next)
+        if (outfitChanged) WidgetHub.refreshAll(context)
         applySound()
         // Switching the relay on or off rebuilds the connection with the right routes.
         if (relayChanged) currentPairing?.let { restartLink(it) }
@@ -694,8 +696,10 @@ class AppModel(private val context: Context) : LinkListener {
 
     fun applyComputerOutfit(outfit: String) {
         val v = com.coucou.android.mochi.outfit.Wardrobe.parse(outfit)
+        if (computerOutfit == v) return
         computerOutfit = v
         kv.put("computer_outfit", v)
+        WidgetHub.refreshAll(context)
     }
 
     override fun onChatModels(models: List<ChatModel>) {

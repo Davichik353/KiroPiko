@@ -85,6 +85,8 @@ object WidgetHub {
             draw(Size.MEDIUM)
         }
 
+    fun outfit(context: Context) = (context.applicationContext as CoucouApp).model.dress()
+
     /** dp to pixels on this screen, at least 1. */
     fun px(context: Context, dp: Int): Int = (dp * context.resources.displayMetrics.density).roundToInt().coerceAtLeast(1)
 
