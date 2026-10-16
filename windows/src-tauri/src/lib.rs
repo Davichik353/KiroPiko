@@ -859,7 +859,7 @@ pub fn run() {
             // Withdraw the phone link's announcement on the local network before the process ends.
             if let tauri::RunEvent::Exit = event {
                 phone_link::stop_on_exit(app);
-                notebook::notebook_stop();
+                notebook::stop_on_exit();
             }
         });
 }

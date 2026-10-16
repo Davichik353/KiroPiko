@@ -8,6 +8,8 @@ static DISK: Mutex<()> = Mutex::new(());
 static RECORDING: AtomicBool = AtomicBool::new(false);
 static ACTIVE: Mutex<Option<String>> = Mutex::new(None);
 static STOP: AtomicBool = AtomicBool::new(false);
+#[cfg(windows)]
+static CHILD: Mutex<Option<std::os::windows::io::OwnedHandle>> = Mutex::new(None);
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -150,6 +152,20 @@ pub fn notebook_open(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn notebook_stop() { STOP.store(true, Ordering::SeqCst); }
 
+pub fn stop_on_exit() {
+    notebook_stop();
+    // The process is exiting, so our grace-period monitor cannot keep running.
+    // Keep an owned process handle (not a reusable PID) to close only our child.
+    #[cfg(windows)]
+    if let Ok(child) = CHILD.lock() {
+        if let Some(handle) = child.as_ref() {
+            use std::os::windows::io::AsRawHandle;
+            let handle = windows::Win32::Foundation::HANDLE(handle.as_raw_handle());
+            let _ = unsafe { windows::Win32::System::Threading::TerminateProcess(handle, 0) };
+        }
+    }
+}
+
 #[tauri::command]
 pub fn notebook_start(shared: State<'_, crate::Shared>) -> Result<Note, String> {
     // Keep this guard until the recording is started. Revoking microphone access
@@ -180,6 +196,7 @@ pub fn notebook_start(shared: State<'_, crate::Shared>) -> Result<Note, String> 
 fn listen(id: &str) {
     use std::io::{BufRead, BufReader};
     use std::os::windows::process::CommandExt;
+    use std::os::windows::io::AsHandle;
     let stop_path = folder().join(format!("{id}.stop"));
     let result = (|| -> Result<(), String> {
         // A fixed bundled script, no user text is ever interpolated into PowerShell.
@@ -189,6 +206,10 @@ fn listen(id: &str) {
             .env("KIRO_NOTEBOOK_STOP", &stop_path).env("KIRO_NOTEBOOK_PARENT", std::process::id().to_string())
             .creation_flags(0x08000000).stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::piped())
             .spawn().map_err(|e| e.to_string())?;
+        match child.as_handle().try_clone_to_owned() {
+            Ok(handle) => { *CHILD.lock().map_err(|e| e.to_string())? = Some(handle); }
+            Err(e) => { let _ = child.kill(); let _ = child.wait(); return Err(e.to_string()); }
+        }
         let stdout = child.stdout.take().ok_or("Speech output unavailable")?;
         let stderr = child.stderr.take().ok_or("Speech diagnostics unavailable")?;
         // Drain stderr concurrently so an engine error cannot block the child.
@@ -254,6 +275,7 @@ fn listen(id: &str) {
         Ok(())
     })();
     let _ = std::fs::remove_file(&stop_path);
+    if let Ok(mut child) = CHILD.lock() { *child = None; }
     if let Ok(_guard) = DISK.lock() {
         if let Ok(mut book) = load() {
             if let Some(n) = book.notes.iter_mut().find(|n| n.id == id) {
