@@ -441,6 +441,8 @@ html[dir="rtl"] :is(.diff, .path, .keycap, input[type="password"], input[type="t
 /* Coucou HomeHero reference: low stage, strolling cast and urgent lead.
    KiroPiko ink/plum + apricot; status colours retain their semantic role. */
 section.kiro-hero { --hero-tone:#f4b38a; position:relative; display:block; height:274px; padding:0; overflow:hidden; isolation:isolate; border:1px solid #40364d; border-radius:26px; background:#15121c; }
+section.kiro-hero { position:sticky; top:10px; z-index:10; flex-shrink:0; box-shadow:0 12px 24px #100f1680; }
+html { scroll-padding-top:300px; }
 .kiro-hero-light { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .kiro-hero-copy { position:absolute; top:26px; left:26px; right:22px; pointer-events:none; }
 .kiro-hero-eyebrow { color:var(--hero-tone); font-size:10px; font-weight:600; letter-spacing:.12em; }

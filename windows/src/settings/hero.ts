@@ -4,10 +4,11 @@ import { IS_TAURI, onEvent } from "../core/bridge";
 import type { Settings } from "../core/state";
 import { parseOutfit, resolveOutfit } from "../mochi/wardrobe";
 import { drawAvatar } from "../nova/character/avatar";
+import { BotEngine } from "../mochi/engine";
 import { drawPlaySprite, loadCharacter, loadExtraCharacters, spriteIndex } from "../nova/character/sprites";
 import { heroStateText, type HeroSnapshot, type HeroMember } from "./hero-model";
 
-interface Walker { member: HeroMember; button: HTMLButtonElement; ctx: CanvasRenderingContext2D | null; x: number; target: number; rest: number; jump: number; direction: number }
+interface Walker { member: HeroMember; bot: BotEngine; button: HTMLButtonElement; ctx: CanvasRenderingContext2D | null; x: number; target: number; rest: number; jump: number; direction: number }
 
 /** Coucou HomeHero composition: floor troupe, urgent lead, reactive light and real events. */
 export function settingsHero(read: () => Settings) {
@@ -22,7 +23,7 @@ export function settingsHero(read: () => Settings) {
   const card = h("section", { class: "kiro-hero", "aria-label": "Живой мир Киро" }, light,
     h("div", { class: "kiro-hero-copy" }, h("span", { class: "kiro-hero-eyebrow", text: "ТВОЙ МАЛЕНЬКИЙ МИР" }), headline, caption),
     troupe, big, toast, announcement,
-    h("span", { class: "kiro-hero-hint", text: IS_TAURI ? "Нажми на любого Киро" : "Превью · нажми на любого Киро" }));
+    h("span", { class: "kiro-hero-hint", text: IS_TAURI ? "Нажми на персонажа" : "Превью · нажми на персонажа" }));
   const ctx = light.getContext("2d"), bigCtx = bigCanvas.getContext("2d");
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let snapshot: HeroSnapshot = { members: [], quiet: false };
@@ -30,6 +31,7 @@ export function settingsHero(read: () => Settings) {
   let height = 274;
   let frame = 0, timer = 0, last = 0, lastDraw = 0, bigJump = -Infinity, toastUntil = 0, taps = 0;
   let primed = false, unlisten: (() => void) | undefined;
+  let leadX=1,leadTarget=0,leadRest=performance.now()/1000+1.2,leadDirection=-1,leadClock=0;
   let pointer: {x:number;y:number} | null = null;
   const dots = Array.from({length:42}, () => ({x:Math.random(),y:Math.random(),r:.6+Math.random()*1.1,phase:Math.random()*6.28}));
   const still = () => motion.matches || read().novaDoNotDisturb || snapshot.quiet;
@@ -44,14 +46,16 @@ export function settingsHero(read: () => Settings) {
   }
   function syncCast() {
     const cast = snapshot.members.slice(1);
-    const next:HeroMember[] = cast.length ? cast : [{id:"stroller-1",name:"Маленький Киро",state:"idle"},{id:"stroller-2",name:"Маленький Киро",state:"idle"}];
+    const next:HeroMember[] = cast.length ? cast : ["Абрикос","Лаванда","Персик","Слива","Ваниль"].map((name,i)=>({id:`stroller-${i+1}`,name,state:"idle"}));
     walkers = next.map((member,i) => {
       const existing = walkers.find(w => w.member.id===member.id);
-      if (existing) { existing.member = member; existing.button.setAttribute("aria-label", `Поздороваться: ${member.name}`); return existing; }
+      if (existing) { existing.member = member; existing.bot.setState(member.state); existing.button.setAttribute("aria-label", `Поздороваться: ${member.name}`); return existing; }
       const canvas = h("canvas", {width:160,height:160,"aria-hidden":"true"}) as HTMLCanvasElement;
       const button = h("button", {class:"kiro-hero-walker",type:"button","aria-label":`Поздороваться: ${member.name}`,title:member.name},canvas) as HTMLButtonElement;
-      const w:Walker = {member,button,ctx:canvas.getContext("2d"),x:(i+1)/(next.length+1),target:(i+1)/(next.length+1),rest:seconds()+i*.7+.5,jump:-Infinity,direction:1};
-      button.addEventListener("click", () => { w.jump=seconds();w.rest=seconds()+1.5;say(w.member.name,"Привет! Я здесь.","",true);draw(performance.now()); });
+      const colors = [[.957,.702,.541],[.72,.64,.84],[.91,.62,.65],[.60,.52,.70],[.94,.84,.68]] as const;
+      const bot=new BotEngine();bot.isMini=true;bot.bodyColor=colors[i%colors.length];bot.setState(member.state);
+      const w:Walker = {member,bot,button,ctx:canvas.getContext("2d"),x:(i+1)/(next.length+1),target:(i+1)/(next.length+1),rest:seconds()+i*.7+.5,jump:-Infinity,direction:1};
+      button.addEventListener("click", () => { w.jump=seconds();w.rest=seconds()+1.5;if(!still())w.bot.triggerEmote("love");say(w.member.name,"Привет! Я здесь.","",true);draw(performance.now()); });
       return w;
     });
     const buttons=walkers.map(w=>w.button);
@@ -98,26 +102,37 @@ export function settingsHero(read: () => Settings) {
       ctx.strokeStyle=color+"18";ctx.beginPath();ctx.moveTo(18,height-22);ctx.lineTo(width-18,height-22);ctx.stroke();
     }
     const outfit=resolveOutfit(parseOutfit(read().mochiOutfit),new Date());
+    const bigSize=width<430?128:144;
+    const end=width-bigSize-10,start=Math.min(end,width*.46),track=Math.max(1,end-start);
+    let leadWalking=false;
+    if(!reduced&&(outfit==="none"||outfit==="witchHat")&&["idle","finished"].includes(state)&&now>leadRest&&now-bigJump>1.2){
+      const distance=leadTarget-leadX;
+      if(Math.abs(distance)<.002){leadX=leadTarget;leadTarget=1-leadTarget;leadRest=now+2.2;}
+      else{leadDirection=distance>0?1:-1;leadX+=Math.sign(distance)*Math.min(Math.abs(distance),dt*32/track);leadClock+=dt;leadWalking=true;}
+    }
+    big.style.left=`${start+leadX*track}px`;big.style.right="auto";big.style.width=`${bigSize}px`;big.style.height=`${bigSize}px`;
+    bigCanvas.style.width=`${bigSize}px`;bigCanvas.style.height=`${bigSize}px`;
     if(bigCtx) {
       const jump=!reduced?Math.sin(Math.min(1,Math.max(0,(now-bigJump)/.65))*Math.PI)*14:0;
-      bigCtx.clearRect(0,0,360,360);bigCtx.save();bigCtx.scale(2,2);bigCtx.translate(0,-jump+(reduced?0:Math.sin(now*1.65)*.8));
-      drawAvatar(bigCtx,now-bigJump<1.2?1:spriteIndex(state),outfit,180,180);bigCtx.restore();
+      bigCtx.clearRect(0,0,360,360);bigCtx.save();bigCtx.scale(2,2);
+      bigCtx.translate(0,-jump+(reduced?0:leadWalking?-Math.abs(Math.sin(leadClock*7))*2:Math.sin(now*1.65)*2));
+      if(leadWalking){bigCtx.translate(leadDirection<0?180:0,0);bigCtx.scale(leadDirection<0?-1:1,1);if(!drawPlaySprite(bigCtx,"walk",leadClock,180,180,outfit))drawAvatar(bigCtx,spriteIndex(state),outfit,180,180);}
+      else{const pose=now-bigJump<1.2?1:!reduced&&state==="idle"&&now%9>7.4?1:spriteIndex(state);drawAvatar(bigCtx,pose,outfit,180,180);}
+      bigCtx.restore();
     }
-    const size=Math.min(70,Math.max(32,width*.64/(walkers.length+.3)));
-    const lane=Math.max(50,width*.64-size);
+    const size=Math.min(66,Math.max(30,width*.43/(walkers.length+.3)));
+    const lane=Math.max(25,width*.43-size);
     for(const [i,w] of walkers.entries()) {
       let walking=false;
-      if(!reduced&&(outfit==="none"||outfit==="witchHat")&&now>w.rest&&now-w.jump>.7){const distance=w.target-w.x;
+      if(!reduced&&now>w.rest&&now-w.jump>.7){const distance=w.target-w.x;
         if(Math.abs(distance)<.005){w.target=(i+.5+(Math.random()-.5)*.3)/walkers.length;w.rest=now+1.5+Math.random()*3;}
         else{w.direction=distance>0?1:-1;w.x+=Math.sign(distance)*Math.min(Math.abs(distance),dt*.065);walking=true;}}
       const jump=!reduced?Math.sin(Math.min(1,Math.max(0,(now-w.jump)/.6))*Math.PI)*24:0;
       w.button.style.width=`${size}px`;w.button.style.height=`${size}px`;
       w.button.style.transform=`translate3d(${12+w.x*lane}px,${height-size-15-jump-(walking?Math.abs(Math.sin(now*7))*1.5:0)}px,0)`;
       if(w.ctx){w.ctx.clearRect(0,0,160,160);w.ctx.save();w.ctx.scale(2,2);
-        // Costumes without profile art stay upright rather than sliding sideways.
-        const profile=walking&&(outfit==="none"||outfit==="witchHat");
-        if(profile){w.ctx.translate(w.direction<0?80:0,0);w.ctx.scale(w.direction<0?-1:1,1);}
-        if(!(profile&&drawPlaySprite(w.ctx,"walk",now+i,80,80,outfit)))drawAvatar(w.ctx,now-w.jump<1.2?1:spriteIndex(w.member.state),outfit,80,80);
+        if(!reduced)w.bot.update(dt);
+        w.bot.draw(w.ctx,80,80);
         w.ctx.restore();}
     }
   }
