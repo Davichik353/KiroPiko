@@ -33,6 +33,13 @@ export function settingsHero(read: () => Settings) {
   let primed = false, unlisten: (() => void) | undefined;
   let leadX=1,leadTarget=0,leadRest=performance.now()/1000+1.2,leadDirection=-1,leadClock=0;
   let pointer: {x:number;y:number} | null = null;
+  let compact=false;
+  function updateCompact() {
+    const next=compact ? window.scrollY>16 : window.scrollY>80;
+    if(next===compact)return;
+    compact=next;card.classList.toggle("kiro-hero-compact",compact);
+    document.documentElement.classList.toggle("settings-scene-compact",compact);
+  }
   const dots = Array.from({length:42}, () => ({x:Math.random(),y:Math.random(),r:.6+Math.random()*1.1,phase:Math.random()*6.28}));
   const still = () => motion.matches || read().novaDoNotDisturb || snapshot.quiet;
   const seconds = () => performance.now()/1000;
@@ -54,7 +61,7 @@ export function settingsHero(read: () => Settings) {
       const button = h("button", {class:"kiro-hero-walker",type:"button","aria-label":`Поздороваться: ${member.name}`,title:member.name},canvas) as HTMLButtonElement;
       const colors = [[.957,.702,.541],[.72,.64,.84],[.91,.62,.65],[.60,.52,.70],[.94,.84,.68]] as const;
       const bot=new BotEngine();bot.isMini=true;bot.bodyColor=colors[i%colors.length];bot.setState(member.state);
-      const w:Walker = {member,bot,button,ctx:canvas.getContext("2d"),x:(i+1)/(next.length+1),target:(i+1)/(next.length+1),rest:seconds()+i*.7+.5,jump:-Infinity,direction:1};
+      const w:Walker = {member,bot,button,ctx:canvas.getContext("2d"),x:(i+1)/(next.length+1),target:i%2?.1:.9,rest:seconds()+i*.25,jump:-Infinity,direction:1};
       button.addEventListener("click", () => { w.jump=seconds();w.rest=seconds()+1.5;if(!still())w.bot.triggerEmote("love");say(w.member.name,"Привет! Я здесь.","",true);draw(performance.now()); });
       return w;
     });
@@ -102,8 +109,9 @@ export function settingsHero(read: () => Settings) {
       ctx.strokeStyle=color+"18";ctx.beginPath();ctx.moveTo(18,height-22);ctx.lineTo(width-18,height-22);ctx.stroke();
     }
     const outfit=resolveOutfit(parseOutfit(read().mochiOutfit),new Date());
-    const bigSize=width<430?128:144;
-    const end=width-bigSize-10,start=Math.min(end,width*.46),track=Math.max(1,end-start);
+    const folded=Math.max(0,Math.min(1,(274-height)/178));
+    const bigSize=Math.min(width<430?128:144,height-12);
+    const end=width-bigSize-10,start=Math.min(end,width*(.46+folded*.18)),track=Math.max(1,end-start);
     let leadWalking=false;
     if(!reduced&&(outfit==="none"||outfit==="witchHat")&&["idle","finished"].includes(state)&&now>leadRest&&now-bigJump>1.2){
       const distance=leadTarget-leadX;
@@ -120,18 +128,26 @@ export function settingsHero(read: () => Settings) {
       else{const pose=now-bigJump<1.2?1:!reduced&&state==="idle"&&now%9>7.4?1:spriteIndex(state);drawAvatar(bigCtx,pose,outfit,180,180);}
       bigCtx.restore();
     }
-    const size=Math.min(66,Math.max(30,width*.43/(walkers.length+.3)));
-    const lane=Math.max(25,width*.43-size);
+    const size=Math.min(66,height*.55,Math.max(30,width*.43/(walkers.length+.3)));
+    const lane=Math.max(25,width*(.43-folded*.05)-size);
+    const laneStart=12+folded*(width>=480?width*.23:width*.10);
     for(const [i,w] of walkers.entries()) {
       let walking=false;
       if(!reduced&&now>w.rest&&now-w.jump>.7){const distance=w.target-w.x;
-        if(Math.abs(distance)<.005){w.target=(i+.5+(Math.random()-.5)*.3)/walkers.length;w.rest=now+1.5+Math.random()*3;}
-        else{w.direction=distance>0?1:-1;w.x+=Math.sign(distance)*Math.min(Math.abs(distance),dt*.065);walking=true;}}
+        if(Math.abs(distance)<.005){w.target=w.x>.5?.04+Math.random()*.20:.76+Math.random()*.20;w.rest=now+.35+Math.random()*.35;}
+        else{
+          w.direction=distance>0?1:-1;
+          const nextX=w.x+Math.sign(distance)*Math.min(Math.abs(distance),dt*(22+i*2)/lane);
+          const crowded=walkers.some((other,j)=>other!==w&&j%2===i%2&&Math.abs(nextX-other.x)<size*.65/lane&&Math.abs(nextX-other.x)<Math.abs(w.x-other.x));
+          if(crowded){w.target=Math.max(.02,Math.min(.98,w.x-w.direction*.35));w.rest=now+.15;}
+          else{w.x=nextX;walking=true;}
+        }}
       const jump=!reduced?Math.sin(Math.min(1,Math.max(0,(now-w.jump)/.6))*Math.PI)*24:0;
       w.button.style.width=`${size}px`;w.button.style.height=`${size}px`;
-      w.button.style.transform=`translate3d(${12+w.x*lane}px,${height-size-15-jump-(walking?Math.abs(Math.sin(now*7))*1.5:0)}px,0)`;
+      w.button.style.transform=`translate3d(${laneStart+w.x*lane}px,${height-size-9-(i%2)*Math.min(24,size*.45)-jump-(walking?Math.abs(Math.sin(now*9+i))*3:0)}px,0)`;
       if(w.ctx){w.ctx.clearRect(0,0,160,160);w.ctx.save();w.ctx.scale(2,2);
-        if(!reduced)w.bot.update(dt);
+        if(!reduced){w.bot.update(dt);w.bot.yaw=walking?w.direction*.35:w.bot.yaw;}
+        if(walking){w.ctx.translate(40,65);w.ctx.rotate(Math.sin(now*9+i)*.065);w.ctx.translate(-40,-65);}
         w.bot.draw(w.ctx,80,80);
         w.ctx.restore();}
     }
@@ -147,7 +163,8 @@ export function settingsHero(read: () => Settings) {
   big.addEventListener("click",()=>{bigJump=seconds();say("Киро",["Привет! Рад тебя видеть.","Вместе справимся.","Я рядом. Можно творить."][taps++%3],"",true);draw(performance.now());});
   toast.addEventListener("click",()=>{const title=toast.dataset.target;if(!title){toast.hidden=true;return;}Array.from(document.querySelectorAll("#settings-root h2")).find(el=>el.textContent===title)?.scrollIntoView({behavior:motion.matches?"instant":"smooth",block:"start"});});
   document.addEventListener("visibilitychange",sync);motion.addEventListener("change",sync);window.addEventListener("pagehide",pause);window.addEventListener("pageshow",sync);
-  function dispose(){disposed=true;pause();resize.disconnect();observer.disconnect();unlisten?.();document.removeEventListener("visibilitychange",sync);motion.removeEventListener("change",sync);window.removeEventListener("pagehide",pause);window.removeEventListener("pageshow",sync);}
+  window.addEventListener("scroll",updateCompact,{passive:true});updateCompact();
+  function dispose(){disposed=true;pause();resize.disconnect();observer.disconnect();unlisten?.();document.removeEventListener("visibilitychange",sync);motion.removeEventListener("change",sync);window.removeEventListener("pagehide",pause);window.removeEventListener("pageshow",sync);window.removeEventListener("scroll",updateCompact);document.documentElement.classList.remove("settings-scene-compact");}
   void onEvent<HeroSnapshot>("settings-hero",accept).then(off=>{if(disposed)off();else{unlisten=off;watch(visible&&!document.hidden);}});
   syncCast();
   void Promise.all([loadCharacter(),loadExtraCharacters()]).then(()=>{ready=true;sync();}).catch(()=>{caption.textContent="Не удалось загрузить Киро. Открой настройки ещё раз.";big.disabled=true;dispose();});

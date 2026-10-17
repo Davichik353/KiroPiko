@@ -442,7 +442,17 @@ html[dir="rtl"] :is(.diff, .path, .keycap, input[type="password"], input[type="t
    KiroPiko ink/plum + apricot; status colours retain their semantic role. */
 section.kiro-hero { --hero-tone:#f4b38a; position:relative; display:block; height:274px; padding:0; overflow:hidden; isolation:isolate; border:1px solid #40364d; border-radius:26px; background:#15121c; }
 section.kiro-hero { position:sticky; top:10px; z-index:10; flex-shrink:0; box-shadow:0 12px 24px #100f1680; }
+section.kiro-hero { transition:height 280ms cubic-bezier(.2,.8,.2,1),border-radius 280ms ease; }
+section.kiro-hero-compact { height:96px; border-radius:20px; }
+#settings-root { overflow-anchor:none; }
 html { scroll-padding-top:300px; }
+html.settings-scene-compact { scroll-padding-top:120px; }
+.kiro-hero-compact .kiro-hero-copy { top:14px; left:18px; right:auto; }
+.kiro-hero-compact .kiro-hero-copy h2 { font-size:16px; margin:0; max-width:145px; }
+.kiro-hero-compact .kiro-hero-eyebrow,.kiro-hero-compact .kiro-hero-caption,.kiro-hero-compact .kiro-hero-hint { display:none; }
+.kiro-hero-compact button.kiro-hero-toast { top:5px; padding:7px 12px; max-width:340px; }
+@media(max-width:480px) { .kiro-hero-compact .kiro-hero-copy h2 { font-size:12px; max-width:100px; } }
+@media(prefers-reduced-motion:reduce) { section.kiro-hero { transition:none; } }
 .kiro-hero-light { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .kiro-hero-copy { position:absolute; top:26px; left:26px; right:22px; pointer-events:none; }
 .kiro-hero-eyebrow { color:var(--hero-tone); font-size:10px; font-weight:600; letter-spacing:.12em; }
