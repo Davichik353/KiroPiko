@@ -748,7 +748,7 @@ export class Island {
       if (event.button === 2) { this.toggleWardrobe(); return; }
       if (event.button === 0) {
         this.botPress = { x: event.clientX, y: event.clientY };
-        if (State.mode === "compact") this.setView(State.pendingApproval ? State.defaultView() : "music");
+        if (State.mode === "compact") this.setView(State.defaultView());
       }
     });
     window.addEventListener("contextmenu", (event) => { if (this.isBotHit(event.clientX, event.clientY)) event.preventDefault(); });
@@ -759,8 +759,7 @@ export class Island {
     });
     this.islandEl.addEventListener("click", (event) => {
       if ((event.target as Element).closest("button, input, textarea, a, .pill")) return;
-      if (State.mode === "compact") this.setView(State.pendingApproval ? State.defaultView() : "music");
-      else if (!State.pendingApproval && (State.view === "overview" || State.view === "empty")) this.setView("music");
+      if (State.mode === "compact") this.setView(State.defaultView());
     });
 
     this.islandEl.addEventListener("mousedown", (e) => {
@@ -768,6 +767,9 @@ export class Island {
       State.lastActivity = performance.now();
       // A click makes a hover-opened island an ordinary open one.
       this.fsm.userInteracted();
+      // Controls own their click. Changing the view on mousedown can move them
+      // before mouseup and swallow the settings/tab action.
+      if ((e.target as Element).closest("button, input, textarea, select, a, .pill")) return;
       // A press on Mochi may become a drag out to the desktop.
       if (e.button === 0 && this.isBotHit(e.clientX, e.clientY)) {
         this.botPress = { x: e.clientX, y: e.clientY };
@@ -780,7 +782,6 @@ export class Island {
       }
       if (State.mode !== "expanded") {
         this.fsm.click();
-        if (e.button === 0 && !State.pendingApproval) this.setView("music");
         return;
       }
       if (this.isBotHit(e.clientX, e.clientY)) {
