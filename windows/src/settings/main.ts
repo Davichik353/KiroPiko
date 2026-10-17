@@ -20,6 +20,7 @@ import { h, clear } from "../views/dom";
 import { agentsSection } from "./agents";
 import { phoneSection } from "./phone";
 import { supportSection } from "./support";
+import { settingsHero } from "./hero";
 import { colorDot } from "./colors";
 import { renderDiff, statusDot } from "./parts";
 import {
@@ -35,6 +36,7 @@ let settings: Settings = { ...DEFAULT_SETTINGS };
 let version = "";
 
 const root = document.getElementById("settings-root")!;
+let disposeHero: (() => void) | undefined;
 
 async function save() {
   await Bridge.saveSettings(settings);
@@ -1396,9 +1398,13 @@ async function render() {
   declaredViews.length = 0;
   localRedraw = null;
   shortcutsListener = null;
+  disposeHero?.();
+  const hero = settingsHero(() => settings);
+  disposeHero = hero.dispose;
   clear(root);
   root.append(
     h("h1", {}, h("span", { text: "KiroPiko" }), h("span", { class: "version", text: version })),
+    hero.element,
     !IS_TAURI ? h("section", { class: "preview-banner" },
       h("strong", { text: "Браузерное превью" }),
       h("p", { text: "Внешний вид и выбор персонажей сохраняются в этом браузере. Подключение агентов, API-ключи и системные функции работают в приложении Windows." }),
