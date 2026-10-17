@@ -91,7 +91,9 @@ export const VIEW_LAYOUTS: Record<IslandViewName, ViewLayout> = {
   error: { height: 160, botX: 62, botY: null, botDiameter: 58, agentMode: "column" },
   finished: { height: 260, botX: 62, botY: null, botDiameter: 58, agentMode: "column" },
   confused: { height: 160, botX: 76, botY: null, botDiameter: 66, agentMode: "column" },
-  upload: { height: 176, botX: 140, botY: 96, botDiameter: 62, agentMode: "column" },
+  // The illustrated avatar's visible centre sits 4px above its canvas anchor.
+  // Align it with the drop body's centre (104px), above the ambient footer.
+  upload: { height: 176, botX: 140, botY: 108, botDiameter: 62, agentMode: "column" },
   // botY 103 = bar top (42 + 58) + 3, so the dot really rides the bar. The Swift
   // layout says 118 while its own comment says 103; the comment matches the spec.
   uploading: { height: 176, botX: 46, botY: 103, botDiameter: 20, agentMode: "none" },
