@@ -1,6 +1,6 @@
 # KiroPiko Android preview
 
-Test APK: `release/KiroPiko-Android-0.1.3-preview.apk`. Android 11+. Russian follows the phone language; English is the fallback. This is a debug-signed local test build, not a store release. Pairing, chat and approvals have not yet been checked on a physical phone in this workspace.
+Test APK: `release/KiroPiko-Android-0.1.4-preview.apk`. Android 11+. Includes a live Kiro scene in Settings and Wardrobe: walking, football and tap reactions in the selected costume. Motion stops offscreen, in the background, during quiet hours and when system animations are disabled. Russian follows the phone language; English is the fallback. This is a debug-signed local test build, not a store release. Pairing, chat and approvals have not yet been checked on a physical phone in this workspace.
 
 Based on Coucou by Louis Raillé and Android code by Rhytam Biswas (MIT). Internal package namespaces and the coucou://pair protocol remain compatible; the installed application ID is com.kiropiko.android.
 

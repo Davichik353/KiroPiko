@@ -103,28 +103,13 @@ private fun NoOutfitIcon(size: Dp) {
 fun WardrobeScreen(model: AppModel, onBack: () -> Unit) {
     val t = tokens()
     val s = model.settings
-    val clock = remember { { SystemClock.elapsedRealtimeNanos() / 1e6 } }
-    val preview = remember { MochiEngine(clock) }
-    val worn = model.dress()
-    val first = remember { androidx.compose.runtime.mutableStateOf(true) }
-    LaunchedEffect(worn) {
-        preview.setOutfit(worn, animated = false)
-        first.value = false
-    }
     val following = s.outfit == Wardrobe.FOLLOW
     val today = LocalDate.now()
     val seasonal = Wardrobe.seasonal(today)
     LazyColumn(Modifier.padding(horizontal = Gutter), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = BarClearance), verticalArrangement = Arrangement.spacedBy(Gap)) {
         item { ScreenTitle(stringResource(R.string.wardrobe_title), onBack) }
-        item {
-            Panel {
-                Column(Modifier.fillMaxWidth().padding(Spacing.INSIDE.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    MochiView(preview, Modifier.size(120.dp))
-                    Text(stringResource(outfitLabelRes(model.outfitSelection)), style = TypeScale.TITLE.style(t.text.c()), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(stringResource(R.string.wardrobe_note), style = TypeScale.SECONDARY.style(t.textDim.c()), textAlign = TextAlign.Center)
-                }
-            }
-        }
+        item { KiroLiveScene(model, preview = true) }
+        item { Text(stringResource(outfitLabelRes(model.outfitSelection)), style = TypeScale.TITLE.style(t.text.c())) }
         item {
             Panel {
                 ListRow(

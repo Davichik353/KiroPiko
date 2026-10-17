@@ -42,7 +42,7 @@ object KiroPainter {
         else -> 0
     }
 
-    fun DrawScope.drawKiro(e: MochiEngine, nowSec: Double, bust: Boolean = false) {
+    fun DrawScope.drawKiro(e: MochiEngine, nowSec: Double, bust: Boolean = false, play: KiroPlay.Frame? = null) {
         val base = states ?: return
         val face = e.permanentEmote ?: when (e.eyeOverride ?: e.permanentEye) {
             EyeShape.HAPPY -> BotEmote.HAPPY
@@ -70,11 +70,28 @@ object KiroPainter {
             val c = canvas.nativeCanvas
             c.save()
             c.translate(size.width / 2, size.height * .8f)
-            val breath = (sin(nowSec * 1.65) * .006).toFloat()
+            val breath = if(play == null) (sin(nowSec * 1.65) * .006).toFloat() else 0f
             c.scale(1f, 1f + breath)
             c.translate(-size.width / 2, -size.height * .8f)
             if (!useHoliday) accessories(c, outfit, pose, placement, "behind")
-            for (r in pose.regions ?: listOf(pose.rect)) {
+            if(play != null && !bust) {
+                val top=pose.baseline-(pose.baseline-pose.eye[1])*.30f
+                val center=pose.eye[0];val span=pose.span
+                val angles=KiroPlay.legs(play.time,play.football)
+                fun leg(left: Boolean, angle: Float) {
+                    val start=maxOf(pose.rect[0],if(left) center-span*1.15f else center)
+                    val end=minOf(pose.rect[0]+pose.rect[2],if(left) center else center+span*1.15f)
+                    val pivot=center+(if(left) -.35f else .35f)*span
+                    c.save();c.translate(placement.originX+pivot*placement.scale,placement.originY+top*placement.scale)
+                    c.rotate(Math.toDegrees(angle.toDouble()).toFloat())
+                    c.drawBitmap(bitmap,Rect(start.toInt(),top.toInt(),end.toInt(),(pose.rect[1]+pose.rect[3]).toInt()),
+                        RectF((start-pivot)*placement.scale,0f,(end-pivot)*placement.scale,(pose.rect[1]+pose.rect[3]-top)*placement.scale),paint)
+                    c.restore()
+                }
+                leg(true,angles.first);leg(false,angles.second)
+                c.drawBitmap(bitmap,Rect(pose.rect[0].toInt(),pose.rect[1].toInt(),(pose.rect[0]+pose.rect[2]).toInt(),(top+2).toInt()),
+                    RectF(placement.x,placement.y,placement.x+placement.width,placement.originY+(top+2)*placement.scale),paint)
+            } else for (r in pose.regions ?: listOf(pose.rect)) {
                 val left=placement.originX+r[0]*placement.scale; val top=placement.originY+r[1]*placement.scale
                 c.drawBitmap(bitmap, Rect(r[0].toInt(), r[1].toInt(), (r[0]+r[2]).toInt(), (r[1]+r[3]).toInt()), RectF(left, top, left+r[2]*placement.scale, top+r[3]*placement.scale), paint)
             }
