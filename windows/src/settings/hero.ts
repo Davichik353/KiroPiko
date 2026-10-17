@@ -1,68 +1,140 @@
+import { emitTo } from "@tauri-apps/api/event";
 import { h } from "../views/dom";
+import { IS_TAURI, onEvent } from "../core/bridge";
 import type { Settings } from "../core/state";
 import { parseOutfit, resolveOutfit } from "../mochi/wardrobe";
 import { drawAvatar } from "../nova/character/avatar";
-import { loadCharacter, loadExtraCharacters } from "../nova/character/sprites";
+import { drawPlaySprite, loadCharacter, loadExtraCharacters, spriteIndex } from "../nova/character/sprites";
+import { heroStateText, type HeroSnapshot, type HeroMember } from "./hero-model";
 
-/** Local companion only: never starts a task, sound or network request. */
+interface Walker { member: HeroMember; button: HTMLButtonElement; ctx: CanvasRenderingContext2D | null; x: number; target: number; rest: number; jump: number; direction: number }
+
+/** Coucou HomeHero composition: floor troupe, urgent lead, reactive light and real events. */
 export function settingsHero(read: () => Settings) {
-  const caption = h("p", { class: "kiro-hero-caption", text: "Устраивайся. Я рядом." });
-  const status = h("span", { class: "kiro-hero-status" });
-  const canvas = h("canvas", { width: 360, height: 360, "aria-hidden": "true" }) as HTMLCanvasElement;
-  const greet = h("button", { class: "kiro-hero-character", type: "button", "aria-label": "Поздороваться с Киро" }, canvas) as HTMLButtonElement;
-  const card = h("section", { class: "kiro-hero", "aria-label": "Киро рядом" },
-    h("div", { class: "kiro-hero-copy" }, h("span", { class: "kiro-hero-eyebrow", text: "ТВОЙ МАЛЕНЬКИЙ НАПАРНИК" }),
-      h("h2", { text: "Киро рядом" }), caption, status),
-    greet, h("span", { class: "kiro-hero-hint", text: "Нажми на Киро — поздоровайся" }));
-  const ctx = canvas.getContext("2d");
+  const headline = h("h2", { text: "Киро рядом" });
+  const caption = h("p", { class: "kiro-hero-caption", text: "Пока тихо. Устраивайся поудобнее." });
+  const light = h("canvas", { class: "kiro-hero-light", "aria-hidden": "true" }) as HTMLCanvasElement;
+  const bigCanvas = h("canvas", { width: 360, height: 360, "aria-hidden": "true" }) as HTMLCanvasElement;
+  const big = h("button", { class: "kiro-hero-lead", type: "button", "aria-label": "Поздороваться с Киро" }, bigCanvas) as HTMLButtonElement;
+  const troupe = h("div", { class: "kiro-hero-troupe" });
+  const toast = h("button", { class: "kiro-hero-toast", type: "button", hidden: true, "aria-label": "Сообщение Киро" }) as HTMLButtonElement;
+  const announcement = h("span", { class: "kiro-hero-announcement", role: "status", "aria-live": "polite" });
+  const card = h("section", { class: "kiro-hero", "aria-label": "Живой мир Киро" }, light,
+    h("div", { class: "kiro-hero-copy" }, h("span", { class: "kiro-hero-eyebrow", text: "ТВОЙ МАЛЕНЬКИЙ МИР" }), headline, caption),
+    troupe, big, toast, announcement,
+    h("span", { class: "kiro-hero-hint", text: IS_TAURI ? "Нажми на любого Киро" : "Превью · нажми на любого Киро" }));
+  const ctx = light.getContext("2d"), bigCtx = bigCanvas.getContext("2d");
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  let disposed = false, visible = false, ready = false, frame = 0, timer = 0, last = 0, reaction = -Infinity, taps = 0;
-  const phrases = ["Привет! Рад тебя видеть.", "Настроим всё под тебя?", "Я на месте. Можно творить."];
-  function draw(now: number) {
-    if (!ctx || !ready) return;
-    const s = read(), quiet = s.novaDoNotDisturb;
-    const moving = !motion.matches && !quiet;
-    const elapsed = (now - reaction) / 1000;
-    const reacting = elapsed >= 0 && elapsed < 1.2;
-    const jump = moving && reacting ? Math.sin(Math.min(1, elapsed / .65) * Math.PI) * 15 : 0;
-    const breath = moving ? Math.sin(now / 1000 * 1.65) * .8 : 0;
-    ctx.clearRect(0, 0, 360, 360);
-    ctx.save(); ctx.scale(2, 2); ctx.translate(0, -jump + breath);
-    drawAvatar(ctx, reacting ? 1 : moving && Math.floor(now / 1000) % 9 === 8 ? 6 : 0,
-      resolveOutfit(parseOutfit(s.mochiOutfit), new Date()), 180, 180);
-    ctx.restore();
-    const message = reacting ? phrases[(taps - 1) % phrases.length] : quiet ? "Тихо посижу рядом. Не отвлекаю." : "Устраивайся. Я рядом.";
-    if (caption.textContent !== message) caption.textContent = message;
-    const label = quiet ? "Тихий режим" : "Можно поздороваться";
-    if (status.textContent !== label) status.textContent = label;
+  let snapshot: HeroSnapshot = { members: [], quiet: false };
+  let walkers: Walker[] = [], disposed = false, visible = false, ready = false, width = 600;
+  let height = 274;
+  let frame = 0, timer = 0, last = 0, lastDraw = 0, bigJump = -Infinity, toastUntil = 0, taps = 0;
+  let primed = false, unlisten: (() => void) | undefined;
+  let pointer: {x:number;y:number} | null = null;
+  const dots = Array.from({length:42}, () => ({x:Math.random(),y:Math.random(),r:.6+Math.random()*1.1,phase:Math.random()*6.28}));
+  const still = () => motion.matches || read().novaDoNotDisturb || snapshot.quiet;
+  const seconds = () => performance.now()/1000;
+  function say(name: string, text: string, target = "", explicit = false) {
+    if (!visible || document.hidden || (!explicit && (read().novaDoNotDisturb || snapshot.quiet))) return;
+    toast.replaceChildren(h("span", { class: "kiro-hero-toast-dot" }), h("span", {}, h("strong", {text:name}), h("span", {text})));
+    toast.dataset.target = target; toast.setAttribute("aria-label", `${name}: ${text}`);
+    toast.hidden = false; toastUntil = seconds()+4.5;
+    announcement.textContent = `${name}. ${text}`;
+    if (!still()) toast.animate([{opacity:0,transform:"translateY(-14px) scale(.96)"},{opacity:1,transform:"translateY(0) scale(1)"}], {duration:260,easing:"cubic-bezier(.2,.8,.2,1)"});
   }
-  function tick(now: number) {
-    frame = 0;
-    if (disposed || !visible || document.hidden) return;
-    // Static preferences still refresh clothing/status, at one frame a second.
-    const interval = motion.matches || read().novaDoNotDisturb ? 1000 : 1000 / 30;
-    if (now - last >= interval) { draw(now); last = now; }
-    if (motion.matches || read().novaDoNotDisturb) timer = window.setTimeout(() => tick(performance.now()), 1000);
-    else frame = requestAnimationFrame(tick);
+  function syncCast() {
+    const cast = snapshot.members.slice(1);
+    const next:HeroMember[] = cast.length ? cast : [{id:"stroller-1",name:"Маленький Киро",state:"idle"},{id:"stroller-2",name:"Маленький Киро",state:"idle"}];
+    walkers = next.map((member,i) => {
+      const existing = walkers.find(w => w.member.id===member.id);
+      if (existing) { existing.member = member; existing.button.setAttribute("aria-label", `Поздороваться: ${member.name}`); return existing; }
+      const canvas = h("canvas", {width:160,height:160,"aria-hidden":"true"}) as HTMLCanvasElement;
+      const button = h("button", {class:"kiro-hero-walker",type:"button","aria-label":`Поздороваться: ${member.name}`,title:member.name},canvas) as HTMLButtonElement;
+      const w:Walker = {member,button,ctx:canvas.getContext("2d"),x:(i+1)/(next.length+1),target:(i+1)/(next.length+1),rest:seconds()+i*.7+.5,jump:-Infinity,direction:1};
+      button.addEventListener("click", () => { w.jump=seconds();w.rest=seconds()+1.5;say(w.member.name,"Привет! Я здесь.","",true);draw(performance.now()); });
+      return w;
+    });
+    const buttons=walkers.map(w=>w.button);
+    if(buttons.length!==troupe.children.length || buttons.some((b,i)=>troupe.children[i]!==b)) {
+      const focused=document.activeElement;
+      troupe.replaceChildren(...buttons);
+      if(focused instanceof HTMLElement && troupe.contains(focused))focused.focus({preventScroll:true});
+    }
   }
-  function sync() {
-    cancelAnimationFrame(frame); clearTimeout(timer); frame = 0; last = 0;
-    if (!disposed && visible && !document.hidden) { draw(performance.now()); frame = requestAnimationFrame(tick); }
+  function accept(next: HeroSnapshot) {
+    if (disposed) return;
+    const previous=snapshot; snapshot=next; syncCast();
+    if(next.quiet && !previous.quiet){toast.hidden=true;toastUntil=0;}
+    if (primed) for (const m of next.members) {
+      const old=previous.members.find(x=>x.id===m.id);
+      if ((!old || old.state!==m.state) && ["approval","question","error","ratelimit","finished"].includes(m.state)) {
+        say(m.name,heroStateText(m.state),m.id==="integration_claude"?"Claude Code":m.id.startsWith("integration_")?"Интеграции":"Агенты");
+        bigJump=seconds(); const w=walkers.find(w=>w.member.id===m.id);if(w)w.jump=seconds();
+      }
+    }
+    primed=true; draw(performance.now());
   }
-  greet.addEventListener("click", () => { taps++; reaction = performance.now(); draw(reaction); });
-  const observer = new IntersectionObserver(entries => { visible = entries.some(e => e.isIntersecting); sync(); });
-  observer.observe(card);
-  document.addEventListener("visibilitychange", sync);
-  motion.addEventListener("change", sync);
-  function pause() { cancelAnimationFrame(frame); clearTimeout(timer); frame = 0; }
-  function dispose() {
-    disposed = true; cancelAnimationFrame(frame); clearTimeout(timer); observer.disconnect();
-    document.removeEventListener("visibilitychange", sync); motion.removeEventListener("change", sync);
-    window.removeEventListener("pagehide", pause); window.removeEventListener("pageshow", sync);
+  function watch(active:boolean) { if(IS_TAURI)void emitTo("island","settings-hero-watch",active).catch(()=>{}); }
+  function draw(ms:number) {
+    if (!ready || disposed || !visible || document.hidden) return;
+    const now=ms/1000, reduced=still(), dt=Math.min(.05,Math.max(0,(ms-last)/1000));last=ms;
+    const lead=snapshot.members[0], state=lead?.state??"idle";
+    const color=["error","ratelimit"].includes(state)?"#ed8996":["approval","question"].includes(state)?"#f4c97d":state==="finished"?"#c2d9ad":"#f4b38a";
+    card.style.setProperty("--hero-tone",color);
+    const title=heroStateText(state);if(headline.textContent!==title)headline.textContent=title;
+    const detail=read().novaDoNotDisturb||snapshot.quiet?"Тихо посижу рядом. Не отвлекаю.":lead?`${lead.name} · ${snapshot.members.length} в сцене`:"Пока тихо. Устраивайся поудобнее.";
+    if(caption.textContent!==detail)caption.textContent=detail;
+    if(now>toastUntil)toast.hidden=true;
+    if(ctx) {
+      ctx.clearRect(0,0,width,height);
+      const glow=ctx.createRadialGradient(width*.89,20,0,width*.89,20,width*.72);
+      glow.addColorStop(0,color+"28");glow.addColorStop(.65,color+"06");glow.addColorStop(1,color+"00");ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
+      for(const p of dots) {
+        if(!reduced){p.y-=dt*(.017+p.r*.008);if(p.y<0)p.y=1;}
+        let x=p.x*width+(reduced?0:Math.sin(now*.7+p.phase)*5),y=p.y*height;
+        if(pointer&&!reduced){const dx=x-pointer.x,dy=y-pointer.y,d=Math.hypot(dx,dy);if(d<95&&d>0){x+=dx/d*(95-d)*.38;y+=dy/d*(95-d)*.38;}}
+        ctx.fillStyle=color+"66";ctx.beginPath();ctx.arc(x,y,p.r,0,Math.PI*2);ctx.fill();
+      }
+      ctx.strokeStyle=color+"18";ctx.beginPath();ctx.moveTo(18,height-22);ctx.lineTo(width-18,height-22);ctx.stroke();
+    }
+    const outfit=resolveOutfit(parseOutfit(read().mochiOutfit),new Date());
+    if(bigCtx) {
+      const jump=!reduced?Math.sin(Math.min(1,Math.max(0,(now-bigJump)/.65))*Math.PI)*14:0;
+      bigCtx.clearRect(0,0,360,360);bigCtx.save();bigCtx.scale(2,2);bigCtx.translate(0,-jump+(reduced?0:Math.sin(now*1.65)*.8));
+      drawAvatar(bigCtx,now-bigJump<1.2?1:spriteIndex(state),outfit,180,180);bigCtx.restore();
+    }
+    const size=Math.min(70,Math.max(32,width*.64/(walkers.length+.3)));
+    const lane=Math.max(50,width*.64-size);
+    for(const [i,w] of walkers.entries()) {
+      let walking=false;
+      if(!reduced&&(outfit==="none"||outfit==="witchHat")&&now>w.rest&&now-w.jump>.7){const distance=w.target-w.x;
+        if(Math.abs(distance)<.005){w.target=(i+.5+(Math.random()-.5)*.3)/walkers.length;w.rest=now+1.5+Math.random()*3;}
+        else{w.direction=distance>0?1:-1;w.x+=Math.sign(distance)*Math.min(Math.abs(distance),dt*.065);walking=true;}}
+      const jump=!reduced?Math.sin(Math.min(1,Math.max(0,(now-w.jump)/.6))*Math.PI)*24:0;
+      w.button.style.width=`${size}px`;w.button.style.height=`${size}px`;
+      w.button.style.transform=`translate3d(${12+w.x*lane}px,${height-size-15-jump-(walking?Math.abs(Math.sin(now*7))*1.5:0)}px,0)`;
+      if(w.ctx){w.ctx.clearRect(0,0,160,160);w.ctx.save();w.ctx.scale(2,2);
+        // Costumes without profile art stay upright rather than sliding sideways.
+        const profile=walking&&(outfit==="none"||outfit==="witchHat");
+        if(profile){w.ctx.translate(w.direction<0?80:0,0);w.ctx.scale(w.direction<0?-1:1,1);}
+        if(!(profile&&drawPlaySprite(w.ctx,"walk",now+i,80,80,outfit)))drawAvatar(w.ctx,now-w.jump<1.2?1:spriteIndex(w.member.state),outfit,80,80);
+        w.ctx.restore();}
+    }
   }
-  window.addEventListener("pagehide", pause); window.addEventListener("pageshow", sync);
-  void Promise.all([loadCharacter(), loadExtraCharacters()]).then(() => { ready = true; sync(); }).catch(() => {
-    if (!disposed) { caption.textContent = "Киро не загрузился. Попробуй открыть настройки ещё раз."; greet.disabled = true; dispose(); }
-  });
-  return { element: card, dispose };
+  function tick(ms:number){frame=0;if(disposed||!ready||!visible||document.hidden)return;
+    if(ms-lastDraw>=(still()?1000:1000/30)){draw(ms);lastDraw=ms;}
+    if(still())timer=window.setTimeout(()=>tick(performance.now()),1000);else frame=requestAnimationFrame(tick);}
+  function pause(){cancelAnimationFrame(frame);clearTimeout(timer);frame=0;watch(false);}
+  function sync(){pause();last=performance.now();lastDraw=0;if(!disposed&&visible&&!document.hidden){watch(true);draw(last);frame=requestAnimationFrame(tick);}}
+  const resize=new ResizeObserver(entries=>{width=entries[0].contentRect.width;height=entries[0].contentRect.height;light.width=Math.round(width*2);light.height=Math.round(height*2);ctx?.setTransform(2,0,0,2,0,0);draw(performance.now());});resize.observe(card);
+  const observer=new IntersectionObserver(entries=>{visible=entries.some(e=>e.isIntersecting);sync();});observer.observe(card);
+  card.addEventListener("pointermove",e=>{const r=card.getBoundingClientRect();pointer={x:e.clientX-r.left,y:e.clientY-r.top};});card.addEventListener("pointerleave",()=>{pointer=null;});
+  big.addEventListener("click",()=>{bigJump=seconds();say("Киро",["Привет! Рад тебя видеть.","Вместе справимся.","Я рядом. Можно творить."][taps++%3],"",true);draw(performance.now());});
+  toast.addEventListener("click",()=>{const title=toast.dataset.target;if(!title){toast.hidden=true;return;}Array.from(document.querySelectorAll("#settings-root h2")).find(el=>el.textContent===title)?.scrollIntoView({behavior:motion.matches?"instant":"smooth",block:"start"});});
+  document.addEventListener("visibilitychange",sync);motion.addEventListener("change",sync);window.addEventListener("pagehide",pause);window.addEventListener("pageshow",sync);
+  function dispose(){disposed=true;pause();resize.disconnect();observer.disconnect();unlisten?.();document.removeEventListener("visibilitychange",sync);motion.removeEventListener("change",sync);window.removeEventListener("pagehide",pause);window.removeEventListener("pageshow",sync);}
+  void onEvent<HeroSnapshot>("settings-hero",accept).then(off=>{if(disposed)off();else{unlisten=off;watch(visible&&!document.hidden);}});
+  syncCast();
+  void Promise.all([loadCharacter(),loadExtraCharacters()]).then(()=>{ready=true;sync();}).catch(()=>{caption.textContent="Не удалось загрузить Киро. Открой настройки ещё раз.";big.disabled=true;dispose();});
+  return {element:card,dispose};
 }

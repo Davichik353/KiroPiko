@@ -438,19 +438,29 @@ html[dir="rtl"] :is(.diff, .path, .keycap, input[type="password"], input[type="t
 .preview-banner { border: 1px solid #8551d9; border-radius: 12px; padding: 16px; margin-bottom: 20px; background: #21192d; }
 .preview-banner p { font-size: 12px; line-height: 1.6; margin: 10px 0; color: #c9bedc; }
 
-/* Reference lock: Coucou HomeHero composition, KiroPiko Apricot After Dark tokens.
-   One companion, press feedback, no invented agent status or background service calls. */
-section.kiro-hero { position: relative; display: grid; grid-template-columns: minmax(0,1fr) 180px; align-items: center; min-height: 216px; padding: 24px 28px; gap: 12px; overflow: hidden; border-color: #40364d; background: linear-gradient(115deg,#211c29,#17141e 75%); }
-.kiro-hero-copy { position: relative; z-index: 1; }
-.kiro-hero-eyebrow { color: #d7ab91; font-size: 9px; font-weight: 650; letter-spacing: .14em; }
-.kiro-hero h2 { margin: 10px 0 8px; font-size: clamp(24px,4vw,32px); font-weight: 650; letter-spacing: -.04em; line-height: 1.12; }
-.kiro-hero-caption { color: var(--dim); font-size: 13px; line-height: 1.6; min-height: 42px; max-width: 260px; }
-.kiro-hero-status { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; font-size: 11px; color: #d7c8bd; }
-.kiro-hero-status::before { content: ''; width: 5px; height: 5px; background: #f4b38a; border-radius: 50%; }
-button.kiro-hero-character { display: block; width: 180px; height: 180px; padding: 0; background: transparent; border: 0; border-radius: 24px; cursor: pointer; touch-action: manipulation; transition: background 160ms ease; }
-.kiro-hero-character:hover { background: #f4b38a08; }
-.kiro-hero-character:focus-visible { outline: 2px solid #f4b38a; outline-offset: 3px; }
-.kiro-hero-character canvas { display: block; width: 180px; height: 180px; }
-.kiro-hero-hint { position: absolute; right: 22px; bottom: 12px; font-size: 9px; color: var(--dim-2); pointer-events: none; }
-@media(max-width:480px) { section.kiro-hero { padding: 20px 18px 30px; grid-template-columns: minmax(0,1fr) 132px; gap: 2px; min-height: 198px; } .kiro-hero-character { transform: scale(.8); transform-origin: left center; } .kiro-hero-eyebrow { font-size: 8px; letter-spacing: .08em; } .kiro-hero-hint { right: 16px; font-size: 8px; } }
-@media(prefers-reduced-motion:reduce) { .kiro-hero-character { transition: none; } }
+/* Coucou HomeHero reference: low stage, strolling cast and urgent lead.
+   KiroPiko ink/plum + apricot; status colours retain their semantic role. */
+section.kiro-hero { --hero-tone:#f4b38a; position:relative; display:block; height:274px; padding:0; overflow:hidden; isolation:isolate; border:1px solid #40364d; border-radius:26px; background:#15121c; }
+.kiro-hero-light { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.kiro-hero-copy { position:absolute; top:26px; left:26px; right:22px; pointer-events:none; }
+.kiro-hero-eyebrow { color:var(--hero-tone); font-size:10px; font-weight:600; letter-spacing:.12em; }
+.kiro-hero h2 { margin:9px 0 6px; font-size:30px; font-weight:650; line-height:1.15; letter-spacing:-.04em; }
+.kiro-hero-caption { color:var(--dim); font-size:12px; line-height:1.5; max-width:70%; }
+.kiro-hero-troupe { position:absolute; inset:0; pointer-events:none; }
+button.kiro-hero-lead,button.kiro-hero-walker { position:absolute; padding:0; border:0; border-radius:16px; background:transparent; cursor:pointer; touch-action:manipulation; pointer-events:auto; }
+button.kiro-hero-lead { right:10px; bottom:12px; width:164px; height:164px; }
+.kiro-hero-lead canvas { display:block; width:164px; height:164px; }
+button.kiro-hero-walker { top:0; left:0; width:70px; height:70px; will-change:transform; }
+.kiro-hero-walker canvas { display:block; width:100%; height:100%; }
+.kiro-hero button.kiro-hero-lead:hover,.kiro-hero button.kiro-hero-lead:active,.kiro-hero button.kiro-hero-walker:hover,.kiro-hero button.kiro-hero-walker:active { background:transparent; }
+.kiro-hero-lead:focus-visible,.kiro-hero-walker:focus-visible { outline:2px solid var(--hero-tone); outline-offset:0; }
+.kiro-hero-hint { position:absolute; left:26px; bottom:9px; color:var(--dim-2); font-size:9px; pointer-events:none; }
+button.kiro-hero-toast { position:absolute; z-index:3; top:12px; left:12px; right:12px; width:calc(100% - 24px); max-width:440px; margin:0 auto; display:flex; gap:10px; align-items:center; text-align:left; padding:11px 16px; border-radius:22px; background:#302735f2; backdrop-filter:blur(16px); border:1px solid #ffffff20; color:var(--ink); box-shadow:0 8px 30px #0004; cursor:pointer; }
+.kiro-hero-toast[hidden] { display:none; }
+.kiro-hero-toast>span:last-child { min-width:0; display:flex; flex-direction:column; gap:2px; }
+.kiro-hero-toast strong { font-size:10px; font-weight:500; color:var(--dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kiro-hero-toast span span { font-size:12px; font-weight:600; }
+.kiro-hero-toast-dot { width:7px; height:7px; border-radius:50%; background:var(--hero-tone); flex-shrink:0; }
+.kiro-hero-toast:focus-visible { outline:2px solid var(--hero-tone); outline-offset:2px; }
+.kiro-hero-announcement { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+@media(max-width:480px) { .kiro-hero-copy { left:20px; top:22px; } .kiro-hero h2 { font-size:26px; } .kiro-hero-caption { max-width:86%; font-size:11px; } button.kiro-hero-lead { right:0; width:136px; height:136px; } .kiro-hero-lead canvas { width:136px; height:136px; } .kiro-hero-hint { left:20px; font-size:8px; } }

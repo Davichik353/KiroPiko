@@ -14,6 +14,7 @@ import { State, type Settings } from "./core/state";
 import { Island } from "./island/island";
 import { registerHookHandlers } from "./island/hooks";
 import { registerPhoneLink } from "./island/phone-link";
+import { registerSettingsHero } from "./island/settings-hero";
 import { registerIntegrationHandlers, refreshConfigured } from "./island/integrations";
 import { registerShortcutHandlers } from "./island/shortcuts";
 import { applySpotify, registerSpotifyHandlers } from "./island/spotify";
@@ -52,6 +53,7 @@ async function main() {
   void Bridge.setSystemLanguages(systemLanguages());
   island.applySettings();
   State.loadIntegrationTasks();
+  registerSettingsHero();
   observeHistory();
   window.addEventListener("storage", event => {
     if (!IS_TAURI && event.key === "nova.preview.preferences.v1") {

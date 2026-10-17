@@ -23,6 +23,8 @@
 
 ## Unreleased
 
+- **KiroPiko Windows · настройки** — сцена по образцу Coucou HomeHero: большой Киро, маленькие гуляющие компаньоны, частицы с реакцией на курсор и всплывающие реплики. В приложении состояния задач передаются из островка только пока сцена видна; команды, ключи и пути не передаются. Запросы решения имеют приоритет. Тихий режим и уменьшенное движение учитываются. Браузерное превью показывает компаньонов без вымышленных задач. Для костюмов без профильных кадров прогулка заменена спокойной позой и реакцией на нажатие. В опубликованный установщик 0.4.3 это изменение ещё не входит.
+
 - **Flow dictation** *(macOS, GitHub build)* — hold a key anywhere on the Mac (right ⌥ by default, or right ⌘, right ⌃ or fn), speak, let go: your words are pasted where you type, like Wispr Flow. A small pill at the bottom of the screen shows Mochi listening, its nine dots rising and falling with the graves and the aigus of your voice. Two quick taps keep it listening hands-free until the next tap; Esc cancels. Speech is recognised by the Mac (on-device when it can), and the clipboard gets back what it held after the paste. Off by default — Settings → Voice; it needs the Accessibility permission to see the key and paste
 
 ## Android 0.2.0 — October 13, 2026
