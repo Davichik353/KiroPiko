@@ -659,7 +659,7 @@ export class Island {
     if (State.mode === "expanded" && State.view === "question" && State.pendingApproval?.questions) {
       h = QUESTION_PICKER_H;
     }
-    if(State.mode==="expanded"&&State.view!=="greeting"&&!UPLOAD_VIEWS.has(State.view))h+=32;
+    if(State.mode==="expanded"&&State.view!=="greeting"&&!this.uploadActive)h+=32;
     const r = State.mode === "expanded" ? EXPANDED_CORNER : ROUNDED_CORNER;
     w = Math.min(w, Math.max(1, window.innerWidth - 16));
     h = Math.min(h, Math.max(1, window.innerHeight - NOVA_TOP - 8));
@@ -1062,7 +1062,7 @@ export class Island {
   };
 
   private updateBotTargets() {
-    const sceneSpace=State.mode==="expanded"&&State.view!=="greeting"&&!UPLOAD_VIEWS.has(State.view)?32:0;
+    const sceneSpace=State.mode==="expanded"&&State.view!=="greeting"&&!this.uploadActive?32:0;
     const p = botPosition(State.mode, State.view, Math.max(0,this.height.value-sceneSpace), State.uploadProgress);
     if (State.mode === "compact") { p.cx = this.width.value / 2; p.cy = -35; p.diameter = 44; }
     this.botCx.target = p.cx;
