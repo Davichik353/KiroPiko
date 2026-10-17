@@ -28,6 +28,7 @@ import { refreshHookPills } from "./integrations";
 import { DesktopLink } from "./desktop";
 import type { ViewCommand } from "./shortcuts";
 import { DRAG_THRESHOLD } from "../mochi/desktop-logic";
+import { IslandAmbient } from "./ambient";
 
 const BOT_OVERHANG = 40;
 const CLAUDE_DESKTOP_ID = "agent_claude-desktop";
@@ -55,6 +56,7 @@ export class Island {
   private contentEl!: HTMLElement;
   private viewsEl!: HTMLElement;
   private botCanvas!: HTMLCanvasElement;
+  private ambient = new IslandAmbient();
   private botGlow!: HTMLElement;
   private greetingCanvas!: HTMLCanvasElement;
   private miniGrid!: HTMLElement;
@@ -287,6 +289,7 @@ export class Island {
       this.greetingCanvas,
       this.uploadCanvas.el,
       this.contentEl,
+      this.ambient.el,
     );
     this.islandEl = h(
       "div",
@@ -305,6 +308,7 @@ export class Island {
     this.greetingCanvas.style.height = "150px";
 
     this.root.append(this.wakeStrip, this.islandEl);
+    this.ambient.observe(this.clipEl,()=>this.ensureRunning());
     this.applyGeometry();
   }
 
@@ -1020,6 +1024,9 @@ export class Island {
     }
 
     const uploadActive = this.uploadActive;
+    const ambientBusy=this.ambient.draw(nowMs,dt,this.width.value,this.height.value,
+      State.mode==="expanded"&&!greetingActive&&!uploadActive,
+      State.novaQuietActive||State.settings.novaDoNotDisturb,State.effectiveState);
     if (uploadActive) this.uploadCanvas.draw(UploadSeq.frame(), nowMs / 1000);
     this.uploadCanvas.el.classList.toggle("on", uploadActive);
     this.viewsEl.classList.toggle("hidden-by-upload", uploadActive);
@@ -1042,7 +1049,7 @@ export class Island {
       ? settling
       : settling ||
         !this.botCx.settled || !this.botCy.settled || !this.botSize.settled ||
-        greetingActive || this.engine.busy || UploadSeq.isActive || viewAnimating;
+        greetingActive || this.engine.busy || UploadSeq.isActive || viewAnimating || ambientBusy;
 
     if (busy) {
       requestAnimationFrame(this.frame);
