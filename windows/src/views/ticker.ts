@@ -18,18 +18,18 @@ import { ICONS } from "./icons";
 import { cubicBezier, clamp, lerp } from "../core/anim";
 import { parseDiffStep, type DiffStep } from "../core/diff";
 import type { AgentTask } from "../core/state";
+import { readableAction } from "../core/action-label";
 
 const ROW_H = 22;
 /** One step transition, milliseconds. */
 const DURATION = 380;
 /** Beyond this many queued steps we stop trying to show them all. */
 const MAX_QUEUE = 4;
-const COMPLETED_SCALE = 11.5 / 13; // 0.885 — the completed font size
 const EASE = cubicBezier(0.4, 0, 0.2, 1);
 
 /** The current row's text once the turn is over (TickerRowView staticColor). */
 const STILL_CURRENT = "#c9cdd4";
-const DIM = "#6b7079";
+const DIM = "#b6aabd";
 
 interface Row {
   el: HTMLElement;
@@ -53,7 +53,7 @@ function makeRow(): Row {
   check.style.color = "#454850"; // the completed tick is dimmer than the chevron
   check.style.position = "absolute";
   chevron.style.position = "absolute";
-  const shimmer = h("span", { class: "tick-text shimmer" });
+  const shimmer = h("span", { class: "tick-text" });
   const dim = h("span", {
     class: "tick-text",
     // top:0 is where a one-line row already put it; it also keeps a text wider
@@ -78,7 +78,8 @@ function setText(row: Row, text: string) {
   row.text = text;
   const diff = parseDiffStep(text);
   row.diff = diff;
-  const shown = diff ? diff.filename : text;
+  const shown = diff ? diff.filename : readableAction(text);
+  row.el.title = text;
   row.shimmer.textContent = shown;
   row.dim.textContent = shown;
   if (diff) {
@@ -102,8 +103,9 @@ function setText(row: Row, text: string) {
  * `still` is the finished look: static text, ✓ only, nothing animating.
  */
 function place(row: Row, y: number, phase: number, opacity: number, still: boolean) {
-  const scale = 1 - phase * (1 - COMPLETED_SCALE);
-  row.el.style.transform = `translate(${-phase * 10}px, ${y}px) scale(${scale})`;
+  const dpr = window.devicePixelRatio || 1;
+  row.el.style.transform = `translateY(${Math.round(y * dpr) / dpr}px)`;
+  row.el.style.fontSize = phase < .5 ? "14px" : "12px";
   row.el.style.opacity = String(opacity);
   if (still) {
     row.chevron.style.opacity = "0";

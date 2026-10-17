@@ -368,7 +368,7 @@ function buildOverview(actions: ViewActions): ViewHost {
         if (task.steps.length > 1) {
           who.append(h("span", {
             class: "count",
-            text: `${Math.min(task.stepIndex + 1, task.steps.length)}/${task.steps.length}`,
+            text: `Шаг ${(task.stepSeq ?? task.steps.length - 1) + 1}`,
           }));
         }
         ticker.sync(task);
