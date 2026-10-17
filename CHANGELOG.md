@@ -13,6 +13,14 @@
 - Проверка выпусков GitHub по кнопке и ссылка на установщик своей платформы.
 - Виджет «Нужно твоё решение»: агент, переданный проект, системный счётчик ожидания и переход к нужной сессии.
 
+## KiroPiko Windows 0.4.3 / Android 0.1.3-preview — 2026-10-17
+
+- Rustls обновлён до 0.23.46 с исправлениями опубликованных TLS advisories. Защита WebView SmartScreen больше не отключается.
+- Ограничены ответы интеграций, почтового сервиса и проверки Android-relay.
+- Анимационные пружины устойчивы к большим/неправильным временным шагам и точно завершают переходы.
+- Уменьшенное движение останавливает танец, футбольную анимацию и декоративные CSS-циклы; Android перерисовывает Киро реже.
+- Шаги и движение ног синхронизированы. Android-переключатели не запускают лишние пересчёты на каждом кадре; демонстрационные виджеты debug APK защищены от сторонних приложений.
+
 ## Unreleased
 
 - **Flow dictation** *(macOS, GitHub build)* — hold a key anywhere on the Mac (right ⌥ by default, or right ⌘, right ⌃ or fn), speak, let go: your words are pasted where you type, like Wispr Flow. A small pill at the bottom of the screen shows Mochi listening, its nine dots rising and falling with the graves and the aigus of your voice. Two quick taps keep it listening hands-free until the next tap; Esc cancels. Speech is recognised by the Mac (on-device when it can), and the clipboard gets back what it held after the paste. Off by default — Settings → Voice; it needs the Accessibility permission to see the key and paste

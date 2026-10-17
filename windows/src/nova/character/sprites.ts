@@ -1,5 +1,5 @@
 import type { BotEmoteName, BotStateName } from "../../core/layout";
-import { footballPose } from "./play";
+import { footballPose, walkingPose } from "./play";
 import type { Outfit } from "../../mochi/wardrobe";
 import { KIRO_RIG, placePose } from "./rig";
 
@@ -46,7 +46,7 @@ export function drawPlaySprite(ctx: CanvasRenderingContext2D, activity: "walk" |
   if (outfit !== "none" && outfit !== "witchHat") return false;
   const source = activity === "football" ? footballSheet : walkSheet;
   if (!source?.naturalWidth) return false;
-  const frame = activity === "football" ? footballPose(time) : Math.floor(time / .15) % 4;
+  const frame = activity === "football" ? footballPose(time) : walkingPose(time);
   const pose = (activity === "football" ? KIRO_RIG.football : KIRO_RIG.walk)[frame + (outfit === "witchHat" ? 4 : 0)];
   const p = placePose(pose, width, height, false);
   ctx.drawImage(source, ...pose.rect as [number,number,number,number], p.x - (activity === "football" ? width * .08 : 0), p.y, p.w, p.h);

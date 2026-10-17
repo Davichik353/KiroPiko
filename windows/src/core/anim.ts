@@ -76,6 +76,8 @@ export class Spring {
   }
 
   step(dt: number) {
+    // A resumed tab or a broken clock must not create millions of substeps.
+    dt = Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0;
     const steps = Math.max(1, Math.ceil(dt / (1 / 240)));
     const h = dt / steps;
     for (let i = 0; i < steps; i++) {
@@ -144,9 +146,10 @@ export class Tracked {
         this.mode = "idle";
       }
     } else if (this.mode === "curve") {
-      const p = clamp((now - this.curveStart) / this.curveDur, 0, 1);
+      const p = this.curveDur <= 0 ? 1 : clamp((now - this.curveStart) / this.curveDur, 0, 1);
       this.spring.value = lerp(this.curveFrom, this.curveTo, closeCurve(p));
       if (p >= 1) {
+        this.spring.value = this.curveTo;
         this.spring.velocity = 0;
         this.mode = "idle";
       }

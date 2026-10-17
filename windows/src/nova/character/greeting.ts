@@ -8,7 +8,8 @@ export class NovaGreeting extends Greeting {
     ctx.clearRect(0, 0, 640, 150);
     const t = this.elapsed;
     ctx.save();
-    ctx.translate(26, 18 + Math.sin(Math.min(t, 1) * Math.PI) * -10);
+    const reduced=typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    ctx.translate(26, 18 + (reduced ? 0 : Math.sin(Math.min(t, 1) * Math.PI) * -10));
     drawAvatar(ctx, 1, State.wardrobePreview ?? resolveOutfit(parseOutfit(State.settings.mochiOutfit), new Date()), 110, 110);
     ctx.restore();
     ctx.fillStyle = "#f5f3ff";

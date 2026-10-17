@@ -1,4 +1,9 @@
 export type PlayActivity = "walk" | "football";
+export const WALK_CYCLE = .9;
+export function walkingPose(time:number):0|1|2|3 {
+  const t=Number.isFinite(time) ? Math.max(0,time) : 0;
+  return (Math.floor((t % WALK_CYCLE)/(WALK_CYCLE/4)) % 4) as 0|1|2|3;
+}
 
 /** One shared clock for the illustrated pose and the ball's contact. */
 export function footballPose(time: number): 0 | 1 | 2 | 3 {
@@ -23,7 +28,7 @@ export function playFrame(seconds: number): { x: number; y: number; activity: Pl
 /** Shared leg/ball clock: wind-up, contact, flight and return. */
 export function playMotion(activity: PlayActivity, time: number) {
   if (activity === "walk") {
-    const stride = Math.sin(time * Math.PI * 2 / .9);
+    const stride = Math.sin(time * Math.PI * 2 / WALK_CYCLE);
     return { leftLeg: stride * .38, rightLeg: -stride * .38, bounce: -Math.abs(stride) * .012, ballX: .81, ballY: .83 };
   }
   const phase = time - Math.floor(time / 3) * 3;

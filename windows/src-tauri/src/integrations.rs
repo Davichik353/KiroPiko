@@ -24,6 +24,11 @@ use crate::secrets;
 
 const TIMEOUT: Duration = Duration::from_secs(10);
 
+async fn read_json(response: reqwest::Response) -> Result<Value, String> {
+    let bytes = crate::net::read_capped(response, crate::net::MAX_BODY).await?;
+    serde_json::from_slice(&bytes).map_err(|_| "Invalid integration response".into())
+}
+
 /// What the island receives. `event` is only set when something actually changed,
 /// which is what drives the pill badge and the sound.
 #[derive(Serialize, Clone)]
@@ -214,7 +219,7 @@ async fn poll_stripe(app: AppHandle) {
     if !response.status().is_success() {
         return;
     }
-    let json: Value = response.json().await.unwrap_or(json!({}));
+    let json: Value = read_json(response).await.unwrap_or(json!({}));
     let payments: Vec<Value> = json
         .get("data")
         .and_then(Value::as_array)
@@ -294,7 +299,7 @@ async fn poll_github(app: AppHandle) {
         });
         return;
     }
-    let json: Value = response.json().await.unwrap_or(json!({}));
+    let json: Value = read_json(response).await.unwrap_or(json!({}));
     let public = json.get("public_repos").and_then(Value::as_i64).unwrap_or(0);
     let private = json
         .get("owned_private_repos")
@@ -437,7 +442,7 @@ async fn github_graphql(token: &str, query: &str, what: &str) -> Option<Value> {
         log::line(format!("github {what} HTTP {}", response.status().as_u16()));
         return None;
     }
-    let root: Value = response.json().await.ok()?;
+    let root: Value = read_json(response).await.ok()?;
     let errors = github::graphql_error_count(&root);
     if errors > 0 {
         log::line(format!("github {what} GraphQL errors: {errors}"));
@@ -584,7 +589,7 @@ async fn poll_vercel(app: AppHandle) {
         });
         return;
     }
-    let json: Value = response.json().await.unwrap_or(json!({}));
+    let json: Value = read_json(response).await.unwrap_or(json!({}));
     let terminal = ["READY", "ERROR", "CANCELED"];
     let deployments: Vec<Value> = json
         .get("deployments")
@@ -656,7 +661,7 @@ async fn poll_resend(app: AppHandle) {
         });
         return;
     }
-    let json: Value = response.json().await.unwrap_or(json!({}));
+    let json: Value = read_json(response).await.unwrap_or(json!({}));
     let total = json
         .get("total")
         .or_else(|| json.get("count"))
@@ -718,7 +723,7 @@ async fn poll_notion(app: AppHandle) {
         });
         return;
     }
-    let json: Value = response.json().await.unwrap_or(json!({}));
+    let json: Value = read_json(response).await.unwrap_or(json!({}));
     let pages: Vec<Value> = json
         .get("results")
         .and_then(Value::as_array)
@@ -805,7 +810,7 @@ async fn poll_calcom(app: AppHandle) {
         });
         return;
     }
-    let json: Value = response.json().await.unwrap_or(json!({}));
+    let json: Value = read_json(response).await.unwrap_or(json!({}));
     let bookings: Vec<Value> = json
         .get("data")
         .and_then(Value::as_array)
@@ -872,7 +877,7 @@ async fn poll_n8n(app: AppHandle) {
             log::line(format!("n8n list HTTP {}", response.status()));
             continue;
         }
-        let Ok(json) = response.json::<Value>().await else { continue };
+        let Ok(json) = read_json(response).await else { continue };
         items = match &json {
             Value::Object(o) => o.get("data").and_then(Value::as_array).cloned(),
             Value::Array(a) => Some(a.clone()),
@@ -915,7 +920,7 @@ async fn poll_n8n(app: AppHandle) {
         if !response.status().is_success() {
             continue;
         }
-        let Ok(json) = response.json::<Value>().await else { continue };
+        let Ok(json) = read_json(response).await else { continue };
         name = json
             .get("workflowData")
             .and_then(|w| w.get("name"))

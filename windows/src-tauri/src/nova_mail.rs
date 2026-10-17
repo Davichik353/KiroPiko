@@ -35,7 +35,8 @@ pub async fn nova_send_mail(to: String, from: String, subject: String, body: Str
     if !response.status().is_success() {
         return Err(format!("Resend отклонил письмо (HTTP {}). Проверьте ключ, подтверждённый домен отправителя и ограничения аккаунта.", response.status().as_u16()));
     }
-    let value: serde_json::Value = response.json().await.map_err(|_| "Не удалось прочитать подтверждение Resend. Не создавайте новое письмо: проверьте журнал сервиса.")?;
+    let bytes = crate::net::read_capped(response, 64 * 1024).await.map_err(|_| "Слишком большой ответ Resend. Проверьте журнал сервиса перед повторной отправкой.")?;
+    let value: serde_json::Value = serde_json::from_slice(&bytes).map_err(|_| "Не удалось прочитать подтверждение Resend. Не создавайте новое письмо: проверьте журнал сервиса.")?;
     value["id"].as_str().map(str::to_owned).ok_or("Resend не вернул идентификатор письма.".into())
 }
 

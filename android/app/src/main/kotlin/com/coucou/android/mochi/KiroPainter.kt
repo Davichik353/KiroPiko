@@ -19,7 +19,7 @@ object KiroPainter {
     private var sleepingHolidays: Bitmap? = null
     private var ledge: Bitmap? = null
     private var rig: KiroRig? = null
-    private val paths = mutableMapOf<String, Path>()
+    private val paths = java.util.concurrent.ConcurrentHashMap<String, Path>()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
     fun load(context: Context) {
@@ -83,7 +83,7 @@ object KiroPainter {
         }
     }
 
-    private fun path(source: String): Path = paths.getOrPut(source) {
+    private fun path(source: String): Path = paths.computeIfAbsent(source) {
         val tokens = Regex("[A-Za-z]|-?[0-9]+(?:\\.[0-9]+)?").findAll(source).map { it.value }.toList()
         var i = 0
         fun number() = tokens[i++].toFloat()

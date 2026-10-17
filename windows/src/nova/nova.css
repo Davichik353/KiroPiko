@@ -93,7 +93,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid #ffcca8; outline-
 .nova-music-button[aria-pressed="true"] { color: #ffcca8; border-color: #f4b38a; background: #f4b38a20; }
 @keyframes nova-bar { from { transform: scaleY(.18); } to { transform: scaleY(.95); } }
 @media (prefers-reduced-motion: reduce) { .nova-equalizer i { animation: none; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0s !important; transition-delay: 0s !important; animation: none !important; scroll-behavior: auto !important; } }
 #bot-canvas { transition: opacity .4s ease; }
 #island-clip { border-color: var(--kiro-music-accent, rgba(244, 179, 138, .22)); transition: border-color 1s ease; }
 .approval-explanation { font-size: 11px; line-height: 1.45; max-height: 130px; overflow: auto; color: var(--text-dim, #b6aabd); }

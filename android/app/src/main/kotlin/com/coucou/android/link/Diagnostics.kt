@@ -39,6 +39,15 @@ interface DiagEnv {
 }
 
 object Diagnostics {
+    internal fun readPrefix(reader: java.io.Reader): String {
+        val chars=CharArray(64);var size=0
+        while(size<chars.size) {
+            val n=reader.read(chars,size,chars.size-size)
+            if(n<=0)break
+            size+=n
+        }
+        return String(chars,0,size)
+    }
     /** Runs every check, reporting each as it finishes. A step whose premise failed is skipped, not guessed. */
     fun run(env: DiagEnv, onResult: (DiagStep, DiagResult) -> Unit = { _, _ -> }): List<Pair<DiagStep, DiagResult>> {
         val out = ArrayList<Pair<DiagStep, DiagResult>>()
@@ -200,8 +209,8 @@ class LanDiagnostics(
                 conn.connectTimeout = timeoutMs
                 conn.readTimeout = timeoutMs
                 conn.instanceFollowRedirects = false
-                val body = try { conn.inputStream.bufferedReader().readText().take(64) } finally { conn.disconnect() }
-                if (conn.responseCode == 200 && body.startsWith("Coucou link relay")) DiagResult.Ok("The relay at ${url.host} answers")
+                val (status,body) = try { conn.responseCode to conn.inputStream.reader().use { Diagnostics.readPrefix(it) } } finally { conn.disconnect() }
+                if (status == 200 && body.startsWith("Coucou link relay")) DiagResult.Ok("The relay at ${url.host} answers")
                 else DiagResult.Problem("${url.host} answers but is not a Coucou relay", "Check the address on the computer (Away from home Wi-Fi).")
             } catch (_: IOException) {
                 DiagResult.Problem("Cannot reach the relay at ${url.host}", "Check your internet connection and the relay's address.")

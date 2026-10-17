@@ -63,7 +63,7 @@ fun CoucouSwitch(checked: Boolean, onChange: (Boolean) -> Unit, modifier: Modifi
                 .background(if (checked) t.primaryButton.c() else t.panel2.c())
                 .border(1.dp, if (checked) Color.Transparent else t.line.c(), CircleShape),
         ) {
-            Box(Modifier.offset(x = 3.dp + knobX, y = 3.dp).size(KNOB).clip(CircleShape).background(if (checked) t.onPrimaryButton.c() else Color.White))
+            Box(Modifier.offset { IntOffset((3.dp + knobX).roundToPx(), 3.dp.roundToPx()) }.size(KNOB).clip(CircleShape).background(if (checked) t.onPrimaryButton.c() else Color.White))
         }
     }
 }

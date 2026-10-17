@@ -1,6 +1,6 @@
 # KiroPiko Android preview
 
-Test APK: `release/KiroPiko-Android-0.1.2-preview.apk`. Android 11+. Russian follows the phone language; English is the fallback. This is a debug-signed local test build, not a store release. Pairing, chat and approvals have not yet been checked on a physical phone in this workspace.
+Test APK: `release/KiroPiko-Android-0.1.3-preview.apk`. Android 11+. Russian follows the phone language; English is the fallback. This is a debug-signed local test build, not a store release. Pairing, chat and approvals have not yet been checked on a physical phone in this workspace.
 
 Based on Coucou by Louis Raillé and Android code by Rhytam Biswas (MIT). Internal package namespaces and the coucou://pair protocol remain compatible; the installed application ID is com.kiropiko.android.
 
@@ -10,9 +10,9 @@ The Android app of [Coucou](https://github.com/Louis-CFM/coucou) by Louis Raill�
 agents as Kiro on your phone and lets you approve or deny their permission requests, answer their questions and chat
 through your computer's AI providers.
 
-The name, the Kiro character, the icon and the sounds are © Louis Raillé and used with permission (see
-[PERMISSION.md](PERMISSION.md)). The Android code is © Rhytam Biswas under the MIT License (see [LICENSE](LICENSE)). The app is free: no ads, no billing, no analytics.
-It is English only and dark only. Download the signed APK from the [Releases](https://github.com/Louis-CFM/coucou/releases/tag/android-v0.2.0) (Android 11 or later; it needs Coucou 0.4.0 or later on Windows or Linux).
+Upstream Coucou/Mochi name, character, icon and sound attribution is retained in
+[PERMISSION.md](PERMISSION.md). The original Android code is © Rhytam Biswas under the MIT License (see [LICENSE](LICENSE)). KiroPiko adds its own branding, character rendering and Russian interface. The app is free: no ads, no billing, no analytics.
+This preview supports English and Russian with a dark interface. Download the test APK from [KiroPiko releases](https://github.com/Davichik353/KiroPiko/releases) (Android 11 or later; paired KiroPiko desktop required). The upstream screenshots below document the original app rather than the current KiroPiko appearance.
 
 ## Screenshots
 
