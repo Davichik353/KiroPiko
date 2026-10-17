@@ -1,5 +1,6 @@
 import { BotEngine } from "../../mochi/engine";
-import { drawServiceSprite, drawPlaySprite, spriteIndex } from "./sprites";
+import { drawServiceSprite, spriteIndex } from "./sprites";
+import { drawPlayingAvatar } from "./play-avatar";
 import { drawAvatar } from "./avatar";
 import { State } from "../../core/state";
 import { interactionMode } from "./state";
@@ -58,10 +59,7 @@ export class NovaCharacter extends BotEngine {
     ctx.scale(1, 1 + breath * 0.004);
     ctx.translate(-width / 2, -height / 2);
     const serviceDrawn = this.serviceId && drawServiceSprite(ctx, this.serviceId, width, height);
-    // Dedicated profile/play sheets exist only for the base and witch outfits.
-    // Other outfits keep their complete registered art instead of losing clothes.
-    const dedicated = this.outfit === "none" || this.outfit === "witchHat";
-    const playDrawn = this.activity && dedicated && drawPlaySprite(ctx, this.activity, playTime, width, height, this.outfit);
+    const playDrawn = !serviceDrawn && this.activity && drawPlayingAvatar(ctx, this.activity, playTime, width, height, this.isMini ? "none" : this.outfit);
     if (!serviceDrawn && !playDrawn) drawAvatar(ctx, index, this.isMini ? "none" : this.outfit, width, height, this.peeking,
       this.activity && !reduced ? playMotion(this.activity, playTime) : undefined);
     ctx.restore();

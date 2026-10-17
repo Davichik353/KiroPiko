@@ -5,7 +5,8 @@ import type { Settings } from "../core/state";
 import { parseOutfit, resolveOutfit } from "../mochi/wardrobe";
 import { drawAvatar } from "../nova/character/avatar";
 import { BotEngine } from "../mochi/engine";
-import { drawPlaySprite, loadCharacter, loadExtraCharacters, spriteIndex } from "../nova/character/sprites";
+import { loadCharacter, loadExtraCharacters, spriteIndex } from "../nova/character/sprites";
+import { drawPlayingAvatar } from "../nova/character/play-avatar";
 import { heroStateText, type HeroSnapshot, type HeroMember } from "./hero-model";
 
 interface Walker { member: HeroMember; bot: BotEngine; button: HTMLButtonElement; ctx: CanvasRenderingContext2D | null; x: number; target: number; rest: number; jump: number; direction: number }
@@ -113,7 +114,7 @@ export function settingsHero(read: () => Settings) {
     const bigSize=Math.min(width<430?128:144,height-12);
     const end=width-bigSize-10,start=Math.min(end,width*(.46+folded*.18)),track=Math.max(1,end-start);
     let leadWalking=false;
-    if(!reduced&&(outfit==="none"||outfit==="witchHat")&&["idle","finished"].includes(state)&&now>leadRest&&now-bigJump>1.2){
+    if(!reduced&&["idle","finished"].includes(state)&&now>leadRest&&now-bigJump>1.2){
       const distance=leadTarget-leadX;
       if(Math.abs(distance)<.002){leadX=leadTarget;leadTarget=1-leadTarget;leadRest=now+2.2;}
       else{leadDirection=distance>0?1:-1;leadX+=Math.sign(distance)*Math.min(Math.abs(distance),dt*32/track);leadClock+=dt;leadWalking=true;}
@@ -124,7 +125,7 @@ export function settingsHero(read: () => Settings) {
       const jump=!reduced?Math.sin(Math.min(1,Math.max(0,(now-bigJump)/.65))*Math.PI)*14:0;
       bigCtx.clearRect(0,0,360,360);bigCtx.save();bigCtx.scale(2,2);
       bigCtx.translate(0,-jump+(reduced?0:leadWalking?-Math.abs(Math.sin(leadClock*7))*2:Math.sin(now*1.65)*2));
-      if(leadWalking){bigCtx.translate(leadDirection<0?180:0,0);bigCtx.scale(leadDirection<0?-1:1,1);if(!drawPlaySprite(bigCtx,"walk",leadClock,180,180,outfit))drawAvatar(bigCtx,spriteIndex(state),outfit,180,180);}
+      if(leadWalking){bigCtx.translate(leadDirection<0?180:0,0);bigCtx.scale(leadDirection<0?-1:1,1);drawPlayingAvatar(bigCtx,"walk",leadClock,180,180,outfit);}
       else{const pose=now-bigJump<1.2?1:!reduced&&state==="idle"&&now%9>7.4?1:spriteIndex(state);drawAvatar(bigCtx,pose,outfit,180,180);}
       bigCtx.restore();
     }
