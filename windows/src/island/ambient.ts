@@ -35,17 +35,16 @@ export class IslandAmbient {
     const elapsed=Math.min(.05,Math.max(0,(ms-this.last)/1000));this.last=ms;
     const ctx=this.ctx;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
     const tint=state==="error"||state==="ratelimit"?"#ed8996":state==="approval"||state==="question"?"#f4c97d":state==="finished"?"#c2d9ad":"#f4b38a";
-    const wash=ctx.createLinearGradient(0,0,110,h);wash.addColorStop(0,tint+"04");wash.addColorStop(1,tint+"14");ctx.fillStyle=wash;ctx.fillRect(0,38,100,Math.max(0,h-38));
+    const wash=ctx.createLinearGradient(0,h-36,0,h);wash.addColorStop(0,tint+"00");wash.addColorStop(1,tint+"18");ctx.fillStyle=wash;ctx.fillRect(0,h-36,w,36);
     for(const p of this.dots){if(moving){p.y-=elapsed*.035;if(p.y<0)p.y=1;}
-      let x=p.x*w,y=40+p.y*Math.max(0,h-48);
+      let x=p.x*w,y=h-36+p.y*32;
       if(this.pointer&&moving){const dx=x-this.pointer.x,dy=y-this.pointer.y,d=Math.hypot(dx,dy);if(d>0&&d<65){x+=dx/d*(65-d)*.3;y+=dy/d*(65-d)*.3;}}
-      ctx.fillStyle=tint+(x<100?"70":"24");ctx.beginPath();ctx.arc(x,y,p.r,0,Math.PI*2);ctx.fill();}
-    const count=h>=230?5:3, side=h>=230?34:30;
+      ctx.fillStyle=tint+"60";ctx.beginPath();ctx.arc(x,y,p.r,0,Math.PI*2);ctx.fill();}
+    const count=5, side=32;
     for(let i=0;i<count;i++){
       const actor=this.cast[i];
-      if(moving){actor.x+=actor.direction*elapsed*(.30+i*.025);if(actor.x>=.95){actor.x=.95;actor.direction=-1;}if(actor.x<=.05){actor.x=.05;actor.direction=1;}actor.bot.update(Math.min(.05,Math.max(0,dt)));actor.bot.yaw=actor.direction*.3;}
-      const row=h>=230?i%3:0;
-      const x=7+actor.x*(88-side),y=h-side-10-row*27-(moving?Math.abs(Math.sin(ms/1000*8+i))*2:0);
+      if(moving){actor.x+=actor.direction*elapsed*(18+i*3)/Math.max(1,w-side-32);if(actor.x>=.95){actor.x=.95;actor.direction=-1;}if(actor.x<=.05){actor.x=.05;actor.direction=1;}actor.bot.update(Math.min(.05,Math.max(0,dt)));actor.bot.yaw=actor.direction*.3;}
+      const x=16+actor.x*Math.max(1,w-side-32),y=h-side-1-(moving?Math.abs(Math.sin(ms/1000*8+i))*2:0);
       ctx.save();ctx.translate(x,y);actor.bot.draw(ctx,side,side);ctx.restore();
     }
     this.painted=true;return moving;

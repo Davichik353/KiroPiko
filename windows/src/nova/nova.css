@@ -24,7 +24,8 @@
 textarea:focus-visible, summary:focus-visible { outline: 2px solid #ffcca8; outline-offset: 2px; }
 #nova-notice { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); width: min(600px, calc(100vw - 32px)); padding: 14px 18px; color: #f7f0e8; background: #262131; border: 1px solid #f4b38a80; border-radius: 12px; box-shadow: 0 8px 30px #0007; font: 13px/1.5 "Segoe UI", sans-serif; z-index: 100; }
 #island { background: linear-gradient(150deg, #211b2b, #100f16); border: 1px solid #ffffff20; box-shadow: 0 12px 35px #0005; }
-.island-ambient { position:absolute; inset:0; pointer-events:none; clip-path:inset(40px calc(100% - 105px) 0 0); }
+.island-ambient { position:absolute; inset:0; pointer-events:none; clip-path:inset(calc(100% - 36px) 0 0); }
+#content.with-ambient { padding-bottom:42px; }
 .island-ambient[hidden] { display:none; }
 .nova-wordmark { font-size: 10px; font-weight: 800; letter-spacing: 1.7px; color: #f7f0e8; align-self: center; margin-right: 6px; }
 .pill .mini { margin-right: 3px; }
