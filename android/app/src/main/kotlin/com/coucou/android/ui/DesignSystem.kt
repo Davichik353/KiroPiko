@@ -74,7 +74,9 @@ fun Panel(modifier: Modifier = Modifier, wash: Color? = null, content: @Composab
     val t = tokens()
     val shape = RoundedCornerShape(Radii.PANEL.dp)
     Column(
-        modifier.fillMaxWidth().clip(shape).background(t.panel.c()).border(1.dp, t.line.c(), shape)
+        modifier.fillMaxWidth().clip(shape)
+            .background(Brush.linearGradient(listOf(t.panel.c(),t.bg.c().copy(alpha=.94f))))
+            .border(1.dp, Brush.linearGradient(listOf(t.line.c(),t.line.c().copy(alpha=.35f))), shape)
             .then(if (wash != null) Modifier.drawBehind { drawWash(wash, t.washAlpha.toFloat()) } else Modifier),
         content = content,
     )
@@ -95,9 +97,9 @@ internal fun DrawScope.drawWash(color: Color, alpha: Float) {
 fun HeroPanel(modifier: Modifier = Modifier, wash: Color? = null, content: @Composable ColumnScope.() -> Unit) {
     val shape = RoundedCornerShape(bottomStart = Radii.HERO_BOTTOM.dp, bottomEnd = Radii.HERO_BOTTOM.dp)
     Column(
-        modifier.fillMaxWidth().clip(shape).background(IslandSurface.HERO.c())
-            .border(1.dp, Color.White.copy(alpha = 0.06f), shape)
-            .then(if (wash != null) Modifier.drawBehind { drawWash(wash, 0.5f) } else Modifier),
+        modifier.fillMaxWidth().clip(shape).background(Brush.linearGradient(listOf(IslandSurface.HERO.c(),tokens().bg.c())))
+            .border(1.dp, tokens().line.c().copy(alpha=.6f), shape)
+            .then(if (wash != null) Modifier.drawBehind { drawWash(wash, 0.18f) } else Modifier),
         content = content,
     )
 }

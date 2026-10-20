@@ -1,7 +1,7 @@
 import raw from "../../../public/nova/wardrobe-rig.json";
 export interface RigPose { rect: number[]; regions?: number[][]; eye: number[]; span: number; baseline: number; angle: number; neck: number[] }
 export interface RigShape { path?: string; ellipse?: number[]; rect?: number[]; fill: string; stroke: string; lineWidth: number; anchor: string; layer: string }
-interface Rig { version: number; fullEyeSpan: number; bustEyeSpan: number; baseline: number; states: RigPose[]; ledge: RigPose[]; walk: RigPose[]; football: RigPose[]; holidayFull: RigPose[]; holidayBust: RigPose[]; sleepingHolidayFull: RigPose[]; sleepingHolidayBust: RigPose[]; holidayOutfits: string[]; accessories: Record<string, RigShape[]> }
+interface Rig { version: number; fullEyeSpan: number; bustEyeSpan: number; baseline: number; states: RigPose[]; ledge: RigPose[]; walk: RigPose[]; football: RigPose[]; costumeWalkOutfits: string[]; costumeWalk: RigPose[]; costumeFootball: RigPose[]; holidayFull: RigPose[]; holidayBust: RigPose[]; sleepingHolidayFull: RigPose[]; sleepingHolidayBust: RigPose[]; holidayOutfits: string[]; accessories: Record<string, RigShape[]> }
 export const KIRO_RIG = raw as Rig;
 export function placePose(pose: RigPose, width: number, height: number, bust: boolean) {
   const eyeSpan = Math.min(width, height) * (bust ? KIRO_RIG.bustEyeSpan : KIRO_RIG.fullEyeSpan);

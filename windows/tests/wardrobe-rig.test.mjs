@@ -30,6 +30,18 @@ test("holiday crops contain the complete witch brim and never use an equal four-
   assert.equal(KIRO_RIG.holidayOutfits.length,4);
   for (const id of ["beanie","crown","sunglasses","roundGlasses","bow","scarf","bunnyEars"]) assert.ok(KIRO_RIG.accessories[id]?.length);
 });
+
+test("every costume has four registered walk and football poses on one ground line", () => {
+  assert.deepEqual(KIRO_RIG.costumeWalkOutfits,["pumpkin","santaHat","partyHat"]);
+  for(const poses of [KIRO_RIG.walk,KIRO_RIG.football,KIRO_RIG.costumeWalk,KIRO_RIG.costumeFootball]) {
+    assert.equal(poses.length % 4,0);
+    for(const pose of poses) for(const [width,height] of [[84,130],[180,180]]) {
+      const p=placePose(pose,width,height,false);
+      assert.ok(Math.abs(p.originY+pose.baseline*p.scale-height*.94)<1e-6);
+      assert.ok(p.w>0 && p.h>0 && Number.isFinite(p.x+p.y));
+    }
+  }
+});
 test("sleep uses a dedicated closed-eye costume, other states keep the complete costume", async () => {
   const prior=globalThis.Image;
   globalThis.Image=class {

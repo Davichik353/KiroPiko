@@ -4,6 +4,10 @@ package com.coucou.android.core
 object CoreLanguage {
     var russian = false
     private val labels = mapOf(
+        "Checking the interface" to "Проверяет интерфейс",
+        "Reading documentation" to "Читает документацию",
+        "Working with GitHub" to "Работает с GitHub",
+        "Running code" to "Выполняет код",
         "Asking a question" to "Задаёт вопрос",
         "Running a command" to "Выполняет команду",
         "Reading files" to "Читает файлы",

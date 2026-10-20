@@ -30,8 +30,8 @@ data class Tokens(
 ) {
     companion object {
         val DARK = Tokens(
-            bg = 0xFF100F16, panel = 0xFF1B1824, panel2 = 0xFF262131, line = 0xFF40364D,
-            text = 0xFFF7F0E8, textDim = 0xFFB6AABD, textFaint = 0xFFA194AC,
+            bg = 0xFF100D18, panel = 0xFF201A2B, panel2 = 0xFF30253E, line = 0xFF51405F,
+            text = 0xFFFFF5EB, textDim = 0xFFCCBDD5, textFaint = 0xFFB3A0C2,
             primaryButton = 0xFFF4B38A, onPrimaryButton = 0xFF100F16, secondaryButton = 0xFF30283D,
             danger = 0xFFFF8D97, online = 0xFF34D399, washAlpha = 0.16,
         )
@@ -42,9 +42,9 @@ data class Tokens(
 object IslandSurface {
     const val BLACK = 0xFF100F16L
     const val PANEL = 0xFF1B1824L
-    const val HERO = 0xFF100F16L
-    const val TEXT = 0xFFF5F6F8L
-    const val TEXT_DIM = 0xFF9398A1L
+    const val HERO = 0xFF201A2BL
+    const val TEXT = 0xFFFFF5EBL
+    const val TEXT_DIM = 0xFFCCBDD5L
     /** Pill buttons on these always-dark surfaces. */
     const val BUTTON = 0xFF2A2B2EL
     const val ON_PRIMARY = 0xFF0B0C0EL
@@ -83,10 +83,10 @@ data class TypeStep(val name: String, val sizeSp: Int, val lineSp: Int, val weig
 
 object TypeScale {
     val DISPLAY = TypeStep("display", 28, 34, 700)
-    val TITLE = TypeStep("title", 20, 26, 700)
+    val TITLE = TypeStep("title", 24, 30, 700)
     val HEADLINE = TypeStep("headline", 16, 22, 600)
-    val BODY = TypeStep("body", 15, 22, 400)
-    val SECONDARY = TypeStep("secondary", 13, 18, 400)
+    val BODY = TypeStep("body", 16, 24, 400)
+    val SECONDARY = TypeStep("secondary", 14, 20, 400)
     val LABEL = TypeStep("label", 12, 16, 600)
     /** Only for the exact command and code in chat. */
     val MONO = TypeStep("mono", 12, 18, 400)

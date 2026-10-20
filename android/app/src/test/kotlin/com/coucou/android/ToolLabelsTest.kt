@@ -25,7 +25,8 @@ class ToolLabelsTest {
     }
 
     @Test fun anUnknownToolIsOnlyCleaned() {
-        assertEquals("Mcp github list issues", ToolLabels.label("mcp__github__list_issues"))
+        assertEquals("Working with GitHub", ToolLabels.label("mcp__github__list_issues"))
+        assertEquals("Checking the interface", ToolLabels.label("mcp__cua_repl_js"))
         assertEquals("Foo bar", ToolLabels.label("FooBar"))
         assertEquals("Deploy preview", ToolLabels.label("deploy-preview"))
         assertFalse(ToolLabels.label("some_odd_tool").contains('_'))

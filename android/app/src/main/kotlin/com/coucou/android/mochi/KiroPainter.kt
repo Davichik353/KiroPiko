@@ -19,6 +19,10 @@ object KiroPainter {
     private var sleepingHolidays: Bitmap? = null
     private var ledge: Bitmap? = null
     private var rig: KiroRig? = null
+    private var walk: Bitmap? = null
+    private var football: Bitmap? = null
+    private var costumeWalk: Bitmap? = null
+    private var costumeFootball: Bitmap? = null
     private val paths = java.util.concurrent.ConcurrentHashMap<String, Path>()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
@@ -28,6 +32,10 @@ object KiroPainter {
         holidays = context.assets.open("kiro/kiro-holidays.png").use { BitmapFactory.decodeStream(it) }
         sleepingHolidays = context.assets.open("kiro/kiro-holidays-sleep.png").use { BitmapFactory.decodeStream(it) }
         ledge = context.assets.open("kiro/kiro-mint-ledge.png").use { BitmapFactory.decodeStream(it) }
+        walk = context.assets.open("kiro/kiro-profile-walk.png").use { BitmapFactory.decodeStream(it) }
+        football = context.assets.open("kiro/kiro-football-emotions.png").use { BitmapFactory.decodeStream(it) }
+        costumeWalk = context.assets.open("kiro/kiro-costume-walk.png").use { BitmapFactory.decodeStream(it) }
+        costumeFootball = context.assets.open("kiro/kiro-costume-football.png").use { BitmapFactory.decodeStream(it) }
         rig = KiroRig(org.json.JSONObject(context.assets.open("kiro/wardrobe-rig.json").bufferedReader().use { it.readText() }))
     }
 
@@ -57,6 +65,28 @@ object KiroPainter {
         val index = frame(e.state, face)
         val layout = rig ?: return
         val outfit = if (e.isMini) "none" else e.outfit.id
+        if(play != null && !bust) {
+            val costume=layout.costumeWalkOutfits.indexOf(outfit)
+            val phase=play.time%3
+            val frame=if(play.football) when {phase<.3->0;phase<.55->1;phase<.85->2;else->3}
+                else ((play.time%.9)/.225).toInt().coerceIn(0,3)
+            val pose=if(costume>=0)(if(play.football)layout.costumeFootball else layout.costumeWalk)[costume*4+frame]
+                else (if(play.football)layout.football else layout.walk)[frame+if(outfit=="witchHat")4 else 0]
+            val bitmap=if(costume>=0) {if(play.football)costumeFootball else costumeWalk} else if(play.football)football else walk
+            if(bitmap != null) {
+                val p=layout.place(pose,size.width,size.height)
+                drawIntoCanvas { canvas ->
+                    val c=canvas.nativeCanvas;c.save();if(play.football)c.translate(-size.width*.08f,0f)
+                    val wearAccessories=costume<0 && outfit!="witchHat"
+                    if(wearAccessories)accessories(c,outfit,pose,p,"behind")
+                    val r=pose.rect
+                    c.drawBitmap(bitmap,Rect(r[0].toInt(),r[1].toInt(),(r[0]+r[2]).toInt(),(r[1]+r[3]).toInt()),RectF(p.x,p.y,p.x+p.width,p.y+p.height),paint)
+                    if(wearAccessories)accessories(c,outfit,pose,p,"front",!play.football)
+                    c.restore()
+                }
+                return
+            }
+        }
         val costume = layout.holidayOutfits.indexOf(outfit)
         val useHoliday = costume >= 0 && holidays != null
         val sleepingCostume = useHoliday && index == 5 && sleepingHolidays != null
@@ -118,12 +148,13 @@ object KiroPainter {
         }
     }
 
-    private fun accessories(c: android.graphics.Canvas, outfit: String, pose: KiroPose, placement: KiroPlacement, layer: String) {
+    private fun accessories(c: android.graphics.Canvas, outfit: String, pose: KiroPose, placement: KiroPlacement, layer: String, profile: Boolean = false) {
         val pieces = rig?.pieces?.optJSONArray(outfit) ?: return
         val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeJoin = Paint.Join.ROUND; strokeCap = Paint.Cap.ROUND }
         for (i in 0 until pieces.length()) {
             val shape = pieces.getJSONObject(i)
             if (shape.getString("layer") != layer) continue
+            if(profile && (outfit=="sunglasses" || outfit=="roundGlasses") && shape.optJSONArray("ellipse")?.getDouble(0)?.let { it<0 }==true)continue
             val neck = shape.getString("anchor") == "neck"
             val anchor = if (neck) pose.neck else pose.eye
             c.save()

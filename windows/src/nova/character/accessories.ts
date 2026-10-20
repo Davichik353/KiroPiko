@@ -2,9 +2,10 @@ import type { Outfit } from "../../mochi/wardrobe";
 import { KIRO_RIG, type RigPose, type RigPlacement } from "./rig";
 
 /** Shared vector pieces, measured from the actual face; Android uses the same JSON. */
-export function drawRigAccessories(ctx: CanvasRenderingContext2D, outfit: Outfit, pose: RigPose, p: RigPlacement, layer: "front" | "behind") {
+export function drawRigAccessories(ctx: CanvasRenderingContext2D, outfit: Outfit, pose: RigPose, p: RigPlacement, layer: "front" | "behind", profile = false) {
   for (const shape of KIRO_RIG.accessories[outfit] ?? []) {
     if (shape.layer !== layer) continue;
+    if (profile && (outfit === "sunglasses" || outfit === "roundGlasses") && shape.ellipse && shape.ellipse[0] < 0) continue;
     const anchor = shape.anchor === "neck" ? pose.neck : pose.eye;
     ctx.save();
     ctx.translate(p.originX + anchor[0] * p.scale, p.originY + anchor[1] * p.scale);

@@ -18,6 +18,11 @@ class KiroRig(val source: JSONObject) {
         }
     }
     val states = poses("states")
+    val walk = poses("walk")
+    val football = poses("football")
+    val costumeWalk = poses("costumeWalk")
+    val costumeFootball = poses("costumeFootball")
+    val costumeWalkOutfits = source.getJSONArray("costumeWalkOutfits").let { a -> List(a.length()) { a.getString(it) } }
     val ledge = poses("ledge")
     val holidayFull = poses("holidayFull")
     val holidayBust = poses("holidayBust")

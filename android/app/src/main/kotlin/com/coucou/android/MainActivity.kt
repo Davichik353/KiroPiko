@@ -155,6 +155,7 @@ class MainActivity : ComponentActivity() {
                 SideEffect { WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false }
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     Box(Modifier.fillMaxSize().windowInsetsPadding(if (screen == Screen.HOME || screen == Screen.SCAN) WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom) else WindowInsets.safeDrawing)) {
+                        com.coucou.android.ui.KiroAppBackdrop(model.settings.quiet, screen != Screen.SCAN)
                         val tabs = Nav.tabs()
                         val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
                         val barVisible = Nav.barVisible(screen, keyboardOpen)

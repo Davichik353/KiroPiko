@@ -2,6 +2,7 @@ import type { BotEmoteName, BotStateName } from "../../core/layout";
 import { footballPose, walkingPose } from "./play";
 import type { Outfit } from "../../mochi/wardrobe";
 import { KIRO_RIG, placePose } from "./rig";
+import { drawRigAccessories } from "./accessories";
 
 let sheet: HTMLImageElement | null = null;
 let serviceSheet: HTMLImageElement | null = null;
@@ -10,6 +11,8 @@ let holidaySheet: HTMLImageElement | null = null;
 let sleepingHolidaySheet: HTMLImageElement | null = null;
 let walkSheet: HTMLImageElement | null = null;
 let footballSheet: HTMLImageElement | null = null;
+let costumeWalkSheet: HTMLImageElement | null = null;
+let costumeFootballSheet: HTMLImageElement | null = null;
 
 export function characterSource(index: number, outfit: Outfit, bust: boolean) {
   const costume = KIRO_RIG.holidayOutfits.indexOf(outfit);
@@ -24,6 +27,8 @@ export function characterSource(index: number, outfit: Outfit, bust: boolean) {
 
 export async function loadExtraCharacters(): Promise<void> {
   await Promise.all([
+    ["/nova/kiro-costume-walk.png", (img: HTMLImageElement) => { costumeWalkSheet = img; }],
+    ["/nova/kiro-costume-football.png", (img: HTMLImageElement) => { costumeFootballSheet = img; }],
     ["/nova/kiro-football-emotions.png", (img: HTMLImageElement) => { footballSheet = img; }],
     ["/nova/kiro-profile-walk.png", (img: HTMLImageElement) => { walkSheet = img; }],
     ["/nova/integration-characters.png", (img: HTMLImageElement) => { serviceSheet = img; }],
@@ -43,13 +48,19 @@ export const SERVICE_CHARACTERS: Record<string, number> = {
 };
 
 export function drawPlaySprite(ctx: CanvasRenderingContext2D, activity: "walk" | "football", time: number, width: number, height: number, outfit: Outfit = "none"): boolean {
-  if (outfit !== "none" && outfit !== "witchHat") return false;
-  const source = activity === "football" ? footballSheet : walkSheet;
+  const costume = KIRO_RIG.costumeWalkOutfits.indexOf(outfit);
+  const source = costume >= 0 ? activity === "football" ? costumeFootballSheet : costumeWalkSheet : activity === "football" ? footballSheet : walkSheet;
   if (!source?.naturalWidth) return false;
   const frame = activity === "football" ? footballPose(time) : walkingPose(time);
-  const pose = (activity === "football" ? KIRO_RIG.football : KIRO_RIG.walk)[frame + (outfit === "witchHat" ? 4 : 0)];
+  const pose = costume >= 0 ? (activity === "football" ? KIRO_RIG.costumeFootball : KIRO_RIG.costumeWalk)[costume * 4 + frame]
+    : (activity === "football" ? KIRO_RIG.football : KIRO_RIG.walk)[frame + (outfit === "witchHat" ? 4 : 0)];
   const p = placePose(pose, width, height, false);
-  ctx.drawImage(source, ...pose.rect as [number,number,number,number], p.x - (activity === "football" ? width * .08 : 0), p.y, p.w, p.h);
+  const accessory = costume < 0 && outfit !== "witchHat";
+  ctx.save();if(activity === "football")ctx.translate(-width*.08,0);
+  if(accessory)drawRigAccessories(ctx,outfit,pose,p,"behind");
+  ctx.drawImage(source, ...pose.rect as [number,number,number,number], p.x, p.y, p.w, p.h);
+  if(accessory)drawRigAccessories(ctx,outfit,pose,p,"front",activity === "walk");
+  ctx.restore();
   return true;
 }
 

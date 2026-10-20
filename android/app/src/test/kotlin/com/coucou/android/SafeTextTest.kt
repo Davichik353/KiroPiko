@@ -61,7 +61,7 @@ class SafeTextTest {
     @Test fun anotherToolNeverShowsItsArgument() {
         assertEquals("Editing files", SafeText.requestLabel("Edit", "/home/me/.ssh/config"))
         assertEquals("Editing files", SafeText.requestLabel("Write", "C:\\Users\\me\\secret.txt"))
-        assertEquals("Mcp github create issue", SafeText.requestLabel("mcp__github__create_issue", "title=hunter2"))
+        assertEquals("Working with GitHub", SafeText.requestLabel("mcp__github__create_issue", "title=hunter2"))
         assertEquals("Working", SafeText.requestLabel("", "rm -rf /"))
     }
 

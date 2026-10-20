@@ -1,0 +1,14 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><title>Киро · проверка движения</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#100d18;color:#fff5eb;font:15px/1.5 'Segoe UI',sans-serif}main{max-width:1000px;margin:24px auto;padding:0 16px}header{display:flex;align-items:center;justify-content:space-between;gap:24px}h1{font-size:24px;margin:0}p{margin:4px 0 18px;color:#ccbdd5}button{font:inherit;color:inherit;border:1px solid #51405f;background:#30253e;padding:8px 20px;border-radius:20px;cursor:pointer}button.on{background:#f4b38a;color:#100d18}#grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}article{border:1px solid #51405f;border-radius:20px;background:linear-gradient(140deg,#201a2b,#100d18);text-align:center;padding:8px}canvas{display:block;width:100%;height:150px}h2{font-size:14px;margin:2px 0 4px;font-weight:600}@media(max-width:600px){#grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style><main><header><h1>Киро · все образы</h1><div><button id="walk" class="on">Ходьба</button> <button id="football">Футбол</button></div></header><p>Проверка настоящих кадров: направление, шаги, размер и линия пола.</p><div id="grid"></div></main>
+<script type="module">
+import {loadCharacter,loadExtraCharacters} from '/src/nova/character/sprites.ts';
+import {drawPlayingAvatar} from '/src/nova/character/play-avatar.ts';
+import {drawFootball} from '/src/nova/character/play.ts';
+const outfits=[['none','Обычный'],['partyHat','Праздничный'],['beanie','Шапка'],['crown','Корона'],['sunglasses','Солнечные очки'],['roundGlasses','Круглые очки'],['bow','Бант'],['scarf','Шарф'],['witchHat','Ведьмин образ'],['pumpkin','Тыква'],['santaHat','Новогодний'],['bunnyEars','Ушки кролика']];
+let activity='walk';for(const id of ['walk','football'])document.getElementById(id).onclick=()=>{activity=id;for(const b of document.querySelectorAll('button'))b.classList.toggle('on',b.id===id)};
+const rows=outfits.map(([outfit,label])=>{const el=document.createElement('article'),canvas=document.createElement('canvas'),name=document.createElement('h2');canvas.width=440;canvas.height=300;name.textContent=label;el.append(canvas,name);document.querySelector('#grid').append(el);return {outfit,canvas,ctx:canvas.getContext('2d')}});
+await loadCharacter();await loadExtraCharacters();const start=performance.now();
+function draw(ms){const t=(ms-start)/1000;for(const r of rows){const c=r.ctx;c.clearRect(0,0,440,300);c.save();c.scale(2,2);c.strokeStyle='#51405f';c.beginPath();c.moveTo(12,141);c.lineTo(208,141);c.stroke();const x=50+(activity==='walk'?Math.sin(t*.7)*18:0);c.translate(x,0);if(activity==='walk'&&Math.cos(t*.7)<0){c.translate(120,0);c.scale(-1,1)}drawPlayingAvatar(c,activity,t,120,150,r.outfit);if(activity==='football')drawFootball(c,120,150,t);c.restore()}requestAnimationFrame(draw)}requestAnimationFrame(draw);
+</script></html>

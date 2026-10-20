@@ -54,10 +54,15 @@ fun KiroLiveScene(model: AppModel, preview: Boolean = false) {
         if(!visible)return@LaunchedEffect
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             var last=SystemClock.elapsedRealtimeNanos()
+            var nextCheck=0L
             while(true) {
-                val time=LocalTime.now()
-                val reduced=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)<=0f
-                still=reduced || quiet.isQuiet(time.hour*60+time.minute)
+                val milliseconds=SystemClock.elapsedRealtime()
+                if(milliseconds>=nextCheck) {
+                    val time=LocalTime.now()
+                    val reduced=android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)<=0f
+                    still=reduced || quiet.isQuiet(time.hour*60+time.minute)
+                    nextCheck=milliseconds+500
+                }
                 val now=SystemClock.elapsedRealtimeNanos()
                 val dt=((now-last)/1e9).coerceIn(0.0,.05);last=now
                 if(!still) { engine.update(dt);clock+=dt }
@@ -72,17 +77,20 @@ fun KiroLiveScene(model: AppModel, preview: Boolean = false) {
             Text(if(still) CoreLanguage.text("A quiet moment together.","Тихо посижу рядом.")
                 else if(clock-tapped<3) CoreLanguage.text("Hi! I'm here.","Привет! Я рядом.")
                 else CoreLanguage.text("Tap Kiro to say hello.","Нажми на Киро, чтобы поздороваться."),style=TypeScale.SECONDARY.style(t.textDim.c()))
-            Canvas(Modifier.fillMaxWidth().height(172.dp)
+            Canvas(Modifier.fillMaxWidth().height(208.dp)
                 .onGloballyPositioned { val r=it.boundsInWindow();visible=r.bottom>0 && r.top<view.height && r.height>0 }
                 .clickable(role=Role.Button,onClickLabel=CoreLanguage.text("Say hello to Kiro","Поздороваться с Киро")){tapped=clock}) {
                 val tick=if(still)0.0 else clock
-                val frame=KiroPlay.frame(tick)
                 val active=!still && (state==BotState.IDLE || state==BotState.FINISHED)
                 val avatar=116.dp.toPx().coerceAtMost(size.width*.42f)
                 val lane=(size.width-avatar-12.dp.toPx()).coerceAtLeast(0f)
+                val travelSeconds=(lane*.72f/32.dp.toPx()).toDouble().coerceAtLeast(1.0)
+                val frame=KiroPlay.frame(tick,travelSeconds,travelSeconds)
                 val x=if(active)frame.x*lane else lane*.78f
                 val jump=if(!still && clock-tapped<.65) sin((clock-tapped)/.65*PI).toFloat()*14.dp.toPx() else 0f
-                val y=size.height-avatar-10.dp.toPx()-jump
+                val y=size.height-avatar-46.dp.toPx()-jump
+                val floor=size.height-46.dp.toPx()-avatar*.06f
+                drawLine(Color(0xffb7a2d0).copy(alpha=.13f),Offset(8.dp.toPx(),floor),Offset(size.width-8.dp.toPx(),floor),1.dp.toPx())
                 for(i in 0..4) {
                     val dotX=(((tick*(.028+i*.003)+i*.19)%1)*size.width).toFloat()
                     val dotY=(12+i%3*17).dp.toPx()
@@ -102,12 +110,34 @@ fun KiroLiveScene(model: AppModel, preview: Boolean = false) {
                 }
                 val colors=listOf(0xffb7a2d0,0xfff4b38a,0xffed9ba7,0xfff4d3a2,0xff9681ad)
                 for(i in 0..4) {
-                    val phase=tick*.22+i*1.1
-                    val px=(.07f+i*.075f+(if(still)0f else sin(phase).toFloat()*.025f))*size.width
-                    val py=size.height-13.dp.toPx()-(if(still)0f else kotlin.math.abs(sin(phase*4)).toFloat()*3.dp.toPx())
-                    val w=19.dp.toPx();val h=15.dp.toPx()
-                    drawRoundRect(Color(colors[i]),Offset(px,py-h),Size(w,h),CornerRadius(6.dp.toPx()))
-                    for(eye in 0..1)drawCircle(Color(0xff221c2b),1.7.dp.toPx(),Offset(px+w*(.34f+eye*.32f),py-h*.48f))
+                    val cell=size.width/5f
+                    val w=minOf(28.dp.toPx(),cell*.58f);val h=w*.8f
+                    val room=((cell-w)/2-4.dp.toPx()).coerceAtLeast(0f)
+                    // Walk in a straight lane, pause at each end, then face the return direction.
+                    val cycle=(tick+i*1.43)%10.0
+                    val walking=!still && (cycle<4.0 || cycle in 5.0..<9.0)
+                    val right=cycle<5.0
+                    val progress=when {
+                        cycle<4.0 -> cycle/4.0
+                        cycle<5.0 -> 1.0
+                        cycle<9.0 -> 1.0-(cycle-5.0)/4.0
+                        else -> 0.0
+                    }
+                    val phase=tick*9.0+i*1.7
+                    val px=cell*(i+.5f)-w/2+(if(still)0f else (progress.toFloat()*2f-1f)*room)
+                    val step=if(walking) kotlin.math.abs(sin(phase)).toFloat() else 0f
+                    val floorY=size.height-5.dp.toPx()
+                    val py=floorY-3.dp.toPx()-step*1.5.dp.toPx()
+                    val ink=Color(0xff221c2b)
+                    for(foot in 0..1) {
+                        val lift=if(walking)kotlin.math.max(0.0,sin(phase+foot*PI)).toFloat()*3.dp.toPx() else 0f
+                        drawRoundRect(Color(colors[i]).copy(alpha=.85f),Offset(px+w*(.16f+foot*.48f),floorY-lift),Size(w*.22f,3.dp.toPx()),CornerRadius(1.5.dp.toPx()))
+                    }
+                    drawRoundRect(Color(colors[i]),Offset(px,py-h),Size(w,h),CornerRadius(w*.28f))
+                    val blinking=!still && (tick+i*1.37)%6>5.72
+                    val eyeH=if(blinking)1.1.dp.toPx() else w*.23f
+                    val look=if(still)0f else (if(right)1f else -1f)*w*.07f
+                    for(eye in 0..1)drawRoundRect(ink,Offset(px+w*(.27f+eye*.34f)+look,py-h*.54f-eyeH/2),Size(w*.14f,eyeH),CornerRadius(w*.07f))
                 }
             }
         }

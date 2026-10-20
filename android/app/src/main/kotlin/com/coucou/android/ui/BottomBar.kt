@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -55,19 +56,20 @@ fun BottomBar(tabs: List<Tab>, selected: Tab?, onSelect: (Tab) -> Unit, alert: B
     Row(
         // At least 64 dp, taller when the font is large, so labels are never cut.
         modifier.fillMaxWidth().padding(horizontal = 24.dp).height(IntrinsicSize.Min).heightIn(min = 64.dp)
-            .clip(CircleShape).background(t.panel.c()).border(1.dp, t.line.c(), CircleShape).padding(6.dp),
+            .clip(CircleShape).background(Brush.verticalGradient(listOf(t.panel2.c(),t.panel.c())))
+            .border(1.dp, t.line.c(), CircleShape).padding(6.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         for (tab in tabs) {
             val on = tab == selected
             Box(
-                Modifier.weight(1f).fillMaxHeight().clip(CircleShape).background(if (on) t.panel2.c() else Color.Transparent)
+                Modifier.weight(1f).fillMaxHeight().clip(CircleShape).background(if (on) t.primaryButton.c() else Color.Transparent)
                     .selectable(selected = on, role = Role.Tab, onClick = { onSelect(tab) }),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(Modifier.padding(horizontal = BarFit.ITEM_SIDE_PADDING_DP.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    CoucouIcon(tab.icon(), tint = if (on) t.text.c() else t.textDim.c(), size = 22.dp)
-                    Text(stringResource(tab.label()), style = TypeScale.LABEL.style(if (on) t.text.c() else t.textDim.c()), maxLines = 1, softWrap = false)
+                    CoucouIcon(tab.icon(), tint = if (on) t.onPrimaryButton.c() else t.textDim.c(), size = 22.dp)
+                    Text(stringResource(tab.label()), style = TypeScale.LABEL.style(if (on) t.onPrimaryButton.c() else t.textDim.c()), maxLines = 1, softWrap = false)
                 }
                 if (alert && tab == Tab.HOME) {
                     val amber = MochiConst.STATES[BotState.APPROVAL]?.color?.let(::rgbColor) ?: Color(0xFFF5A524)

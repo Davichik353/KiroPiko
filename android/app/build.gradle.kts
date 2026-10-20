@@ -22,8 +22,8 @@ android {
         applicationId = "com.kiropiko.android"
         minSdk = 30
         targetSdk = 35
-        versionCode = 5
-        versionName = "0.1.4-preview"
+        versionCode = 6
+        versionName = "0.1.5-preview"
         // English only: libraries' other languages are left out of the app too.
         resourceConfigurations += listOf("en", "ru")
     }

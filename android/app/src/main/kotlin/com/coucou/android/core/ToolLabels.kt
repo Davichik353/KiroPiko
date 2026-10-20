@@ -7,6 +7,17 @@ package com.coucou.android.core
  * as "Running npm test" is left alone. Used by the Home card and the island, so both say the same.
  */
 object ToolLabels {
+    private fun mcpLabel(name: String): String? {
+        val value=name.lowercase()
+        if(!value.startsWith("mcp__"))return null
+        return when {
+            "cua_repl" in value || "computer_use" in value -> "Checking the interface"
+            "context7" in value -> "Reading documentation"
+            "github" in value -> "Working with GitHub"
+            "node_repl" in value -> "Running code"
+            else -> null
+        }
+    }
     private val KNOWN = mapOf(
         "askuserquestion" to "Asking a question",
         "askquestion" to "Asking a question",
@@ -76,7 +87,7 @@ object ToolLabels {
         if (!looksLikeAName(head)) return ""
         // An unknown word shows only if it can be a tool's name: a key or a token pasted in its place never does.
         if (KNOWN[key(head)] == null && !plausibleToolName(head)) return ""
-        val tool = CoreLanguage.label(KNOWN[key(head)] ?: clean(head))
+        val tool = CoreLanguage.label(KNOWN[key(head)] ?: mcpLabel(head) ?: clean(head))
         val program = if (rest.isNotEmpty()) SafeText.requestLabel(head, rest).substringAfter(SEP, "") else ""
         return if (program.isNotEmpty()) "$tool$SEP$program" else tool
     }

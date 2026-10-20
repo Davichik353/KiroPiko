@@ -7,12 +7,14 @@ import kotlin.math.sin
 /** One clock for the feet, travel and ball; no renderer or network dependencies. */
 object KiroPlay {
     data class Frame(val x: Float, val left: Boolean, val football: Boolean, val time: Double)
-    fun frame(seconds: Double): Frame {
-        val t = (if (seconds.isFinite()) seconds.coerceAtLeast(0.0) else 0.0) % 28.0
+    fun frame(seconds: Double, outward: Double = 10.0, returning: Double = 8.0): Frame {
+        val out=if(outward.isFinite())outward.coerceIn(1.0,20.0) else 10.0
+        val back=if(returning.isFinite())returning.coerceIn(1.0,20.0) else 8.0
+        val t = (if (seconds.isFinite()) seconds.coerceAtLeast(0.0) else 0.0) % (out+10+back)
         return when {
-            t < 10 -> Frame((.08 + .72*t/10).toFloat(), false, false, t)
-            t < 20 -> Frame(.8f, false, true, t-10)
-            else -> Frame((.8-.72*(t-20)/8).toFloat(), true, false, t-20)
+            t < out -> Frame((.08 + .72*t/out).toFloat(), false, false, t)
+            t < out+10 -> Frame(.8f, false, true, t-out)
+            else -> Frame((.8-.72*(t-out-10)/back).toFloat(), true, false, t-out-10)
         }
     }
     fun legs(time: Double, football: Boolean): Pair<Float, Float> {

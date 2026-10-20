@@ -18,7 +18,7 @@ test('every seasonal and explicit outfit draws distinct walk and kick frames wit
         const ctx=new Proxy({}, {get:(_,key)=>key==='drawImage'? (...args)=>images.push([args[0].name,...args.slice(1)]) : key==='rotate'?angle=>rotations.push(angle):()=>{},set:()=>true});
         assert.equal(drawPlayingAvatar(ctx,activity,time,180,180,outfit),true,`${selection} ${activity}`);
         assert.ok(images.length>0);
-        if(['partyHat','pumpkin','santaHat'].includes(outfit)) assert.match(images[0][0],/kiro-holidays\.png/);
+        if(['partyHat','pumpkin','santaHat'].includes(outfit)) assert.match(images[0][0],/kiro-costume-(walk|football)\.png/);
         frames.push(JSON.stringify({images,rotations}));
       }
       assert.notEqual(frames[0],frames[1],`${selection} must animate ${activity}`);
