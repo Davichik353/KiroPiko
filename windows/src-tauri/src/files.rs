@@ -23,6 +23,48 @@ pub fn inbox_dir() -> PathBuf {
     settings::local_dir().join("inbox")
 }
 
+/// Only an OS dialog can supply this path; the webview cannot choose a source path.
+#[tauri::command]
+pub async fn pick_chat_file() -> Result<Option<DroppedFile>,String> {
+    tauri::async_runtime::spawn_blocking(pick).await.map_err(|_| "File picker failed".to_string())?
+}
+
+#[cfg(windows)]
+fn pick() -> Result<Option<DroppedFile>,String> {
+    use std::{io::Read,process::{Command,Stdio},sync::atomic::{AtomicBool,Ordering}};
+    static BUSY:AtomicBool=AtomicBool::new(false);
+    if BUSY.swap(true,Ordering::AcqRel) {return Err("File picker already open".into());}
+    struct Reset;
+    impl Drop for Reset {fn drop(&mut self){BUSY.store(false,Ordering::Release);}}
+    let _reset=Reset;
+    let root=std::env::var_os("SystemRoot").ok_or("Windows unavailable")?;
+    let script=r#"
+      [Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false)
+      Add-Type -AssemblyName System.Windows.Forms
+      $dialog=New-Object System.Windows.Forms.OpenFileDialog
+      $dialog.Title='KiroPiko - attach one file'
+      $dialog.Multiselect=$false
+      $dialog.CheckFileExists=$true
+      $dialog.Filter='Text and code|*.txt;*.md;*.csv;*.json;*.log;*.ts;*.js;*.py;*.rs;*.html;*.css;*.xml;*.yaml;*.yml|Images and PDF|*.png;*.jpg;*.jpeg;*.webp;*.gif;*.pdf|All files|*.*'
+      try {if($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){[Console]::Write($dialog.FileName)}}finally{$dialog.Dispose()}
+    "#;
+    let mut command=Command::new(PathBuf::from(root).join("System32/WindowsPowerShell/v1.0/powershell.exe"));
+    command.args(["-NoLogo","-NoProfile","-STA","-Command",script]).stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null());
+    crate::platform::no_console(&mut command);
+    let mut child=command.spawn().map_err(|_| "Could not open file picker")?;
+    let mut bytes=Vec::new();
+    child.stdout.take().ok_or("Picker unavailable")?.take(65537).read_to_end(&mut bytes).map_err(|_| "Picker output failed")?;
+    if !child.wait().map_err(|_| "Picker failed")?.success() || bytes.len()>65536 {return Err("File picker failed".into());}
+    let source=String::from_utf8(bytes).map_err(|_| "Invalid file name")?;
+    if source.is_empty(){return Ok(None);}
+    if std::fs::metadata(&source).map_err(|_| "Cannot read file")?.len()>25_000_000 {return Err("Choose a file smaller than 25 MB".into());}
+    allow_dropped([source.clone()]);
+    ingest(&source).map(Some)
+}
+
+#[cfg(not(windows))]
+fn pick() -> Result<Option<DroppedFile>,String> {Err("File picker currently supports Windows".into())}
+
 // ── Paths a real drop delivered ─────────────────────────────────────────────
 //
 // `ingest_file` is callable from the page, so on its own it would copy any file

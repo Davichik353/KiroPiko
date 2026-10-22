@@ -6,6 +6,8 @@ import { emitTo, listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Settings } from "./state";
 import type { DoctorSnapshot } from "../nova/doctor/diagnostics";
+import type { ApiLimitSnapshot } from "./api-limits";
+import type { AccountAgent,CliAction,CliReport } from "./cli-agents";
 import type { RecapHistory, RecapPrefs } from "../recap/summary";
 import type { SpotifyState } from "./spotify";
 import type { MediaSnapshot } from "../nova/music/state";
@@ -217,6 +219,8 @@ export const Bridge = {
   setSystemLanguages: (languages: string[]) => call<void>("set_system_languages", { languages }),
 
   saveSettings: (settings: Settings) => call<void>("save_settings", { settings }),
+  saveSettingsChecked: (settings: Settings) => callOrThrow<void>("save_settings", { settings }),
+  apiLimits: (provider: string) => callOrThrow<ApiLimitSnapshot>("chat_api_limits", { provider }),
 
   /** Shrink the window down to the invisible wake strip (hidden) or back to full. */
   setCollapsed: (collapsed: boolean) => call<void>("set_collapsed", { collapsed }),
@@ -232,6 +236,7 @@ export const Bridge = {
   focusWindow: (focused: boolean) => call<void>("focus_window", { focused }),
 
   reposition: () => call<void>("reposition"),
+  fitZoom: (dpr: number) => call<boolean>("fit_zoom", { dpr }),
 
   /** Displays the island can be pinned to: `key` is what `settings.screen` stores. */
   listMonitors: () => call<{ key: string; label: string }[]>("list_monitors"),
@@ -363,11 +368,15 @@ export const Bridge = {
   chatSend: (query: string, context: ChatContext | null, modelOverride?: string) =>
     callOrThrow<{ text: string }>("chat_send", { query, context, ...(modelOverride ? { modelOverride } : {}) }),
   chatReset: () => call<void>("chat_reset"),
+  chatResetChecked: () => callOrThrow<void>("chat_reset"),
+  pickChatFile: () => callOrThrow<DroppedFile|null>("pick_chat_file"),
   /**
    * The models a provider offers, for the picker in the chat view. Rust asks
    * the provider only when it has a key (or a server address).
    */
   chatModels: (provider: string) => callOrThrow<ModelInfo[]>("chat_models", { provider }),
+  chatProbe: (provider: string, model: string) => callOrThrow<{text:string}>("chat_probe", {provider,model}),
+  cliAgent: (agent:AccountAgent,action:CliAction) => callOrThrow<CliReport>("cli_agent",{agent,action}),
   /** Settings → Local models → Connect: does the server answer, and with which models? */
   /** The custom server's key, bound to the address it is entered for. */
   localSetKey: (url: string, key: string) => call<void>("local_set_key", { url, key }),

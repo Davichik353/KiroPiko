@@ -2,8 +2,8 @@
   "_about": "English source for KiroPiko Android. Russian source: ru.txt. Generate both locales with scripts/gen-strings.mjs.",
   "strings": {
     "app_name": "KiroPiko",
-    "about_unofficial": "KiroPiko for Android. Based on Coucou by Louis Raillé and Rhytam Biswas.",
-    "about_repo": "Based on github.com/Louis-CFM/coucou",
+    "about_unofficial": "KiroPiko for Android — your AI companion, connected to your computer.",
+    "about_repo": "github.com/Davichik353/KiroPiko",
     "licences_title": "Licences",
     "licences_intro": "Coucou source code is MIT-licensed. KiroPiko uses its own character, artwork, icon and sounds. Library licences are listed below.",
     "about_assets": "KiroPiko character and artwork replace Coucou assets. Android source: © Rhytam Biswas, MIT. Coucou foundation: © Louis Raillé.",

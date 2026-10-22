@@ -240,7 +240,8 @@ class AppState {
   fileDragOver = false;
 
   promptContext: PromptContext | null = null;
-  droppedFile: { name: string; path: string } | null = null;
+  droppedFile: { name: string; path: string; size?:number } | null = null;
+  filePreparing = false;
   noteMessage: string | null = null;
   searchResult: SearchResult | null = null;
   chatHistory: ChatMessage[] = [];
@@ -536,7 +537,7 @@ class AppState {
    */
   defaultView(): IslandViewName {
     if (this.pendingApproval) return this.pendingApproval.questions ? "question" : "approval";
-    return this.tasks.length === 0 ? "empty" : "overview";
+    return "developer";
   }
 }
 

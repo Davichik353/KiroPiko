@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { calls, emit, sent } from "./tauri.mjs";
 import { registerHookHandlers } from "../src/island/hooks.ts";
 import { DEFAULT_SETTINGS, State } from "../src/core/state.ts";
+import { agentReceipts } from "../src/nova/agent-link/evidence.ts";
 
 const CLAUDE = "integration_claude";
 
@@ -68,6 +69,14 @@ test("a paused island ignores every other event", () => {
 });
 
 // ── Session and work events ───────────────────────────────────────────────────
+test("real hook dispatch records agent delivery without saving its payload", () => {
+  const before = Date.now();
+  hook({hook_event_name:"SessionStart",coucou_agent:"codex",cwd:"C:/private/project",session_id:"private-id"});
+  const receipt = agentReceipts().codex;
+  assert.deepEqual(Object.keys(receipt).sort(),["at","event"]);
+  assert.equal(receipt.event,"SessionStart");
+  assert.ok(receipt.at>=before && receipt.at<=Date.now());
+});
 
 test("a session names the pill after its folder and reveals the island", () => {
   hook({ hook_event_name: "SessionStart", cwd: "C:\\Users\\me\\proj\\" });
@@ -468,7 +477,7 @@ test("the card shows when the island is already open, and is what it reopens on"
   assert.deepEqual(asked, ["alert:approval"]);
   assert.equal(State.defaultView(), "approval");
   State.endApproval();
-  assert.equal(State.defaultView(), "overview");
+  assert.equal(State.defaultView(), "developer");
 });
 
 test("a question is what the island reopens on while it waits", () => {
@@ -528,7 +537,7 @@ test("an unanswered card is withdrawn after 110 s", () => {
   assert.equal(State.isPinned, false);
   assert.equal(task().state, "working");
   assert.equal(task().pillBadge, null);
-  assert.deepEqual(asked, ["dropPin", "setView:overview"]);
+  assert.deepEqual(asked, ["dropPin", "setView:developer"]);
 });
 
 test("a card answered in time leaves nothing for the 110 s timer to undo", () => {

@@ -1,7 +1,7 @@
 import { BotEngine } from "../../mochi/engine";
 import { drawServiceSprite, spriteIndex } from "./sprites";
 import { drawPlayingAvatar } from "./play-avatar";
-import { drawAvatar } from "./avatar";
+import { drawAvatar, drawHead } from "./avatar";
 import { State } from "../../core/state";
 import { interactionMode } from "./state";
 import { drawFootball, playMotion, type PlayActivity } from "./play";
@@ -33,7 +33,7 @@ export class NovaCharacter extends BotEngine {
     const rawScale = State.settings.novaCharacterScale;
     const scale = Number.isFinite(rawScale) ? Math.max(.7, Math.min(1.1, rawScale)) : 1;
     ctx.save();
-    if (!this.isMini) {
+    if (!this.isMini && !this.peeking) {
       ctx.translate(width / 2, height * .9);
       ctx.scale(scale, scale);
       ctx.translate(-width / 2, -height * .9);
@@ -44,6 +44,18 @@ export class NovaCharacter extends BotEngine {
     const mode = interactionMode(State.novaListening, this.state === "thinking", State.novaSpeaking);
     const waiting = !this.activity && ["thinking", "working", "searching"].includes(this.state) && !emote;
     const index = this.activity === "football" ? 2 : mode === "listening" ? 6 : waiting ? 0 : mode === "speaking" ? 1 : spriteIndex(this.state, emote, this.waveUntil > performance.now() / 1000);
+    if (this.peeking) {
+      // Spring-smoothed yaw/pitch follow the cursor without moving out of the capsule.
+      const yaw = this.reducedMotion ? 0 : this.yaw;
+      const pitch = this.reducedMotion ? 0 : this.pitch;
+      ctx.translate(width / 2 + yaw * width * .06, height / 2 - pitch * height * .06);
+      ctx.rotate(yaw * .10);
+      ctx.scale(1 - Math.abs(yaw) * .08, 1 - Math.abs(pitch) * .04);
+      ctx.translate(-width / 2, -height / 2);
+      drawHead(ctx, index, this.outfit, width, height);
+      ctx.restore();
+      return;
+    }
     const t = performance.now() / 1000;
     const reduced = this.reducedMotion;
     const playTime = reduced ? 0 : t - this.activitySince;

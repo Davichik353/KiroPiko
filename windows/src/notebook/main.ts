@@ -1,4 +1,5 @@
 import "./notebook.css";
+import "../ui/product.css";
 import { invoke } from "@tauri-apps/api/core";
 import { IS_TAURI, Bridge } from "../core/bridge";
 import { h, clear } from "../views/dom";

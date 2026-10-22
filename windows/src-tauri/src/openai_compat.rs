@@ -185,6 +185,7 @@ pub async fn send(
         .send()
         .await
         .map_err(|e| tf("Network error: {error}", &[("error", &e.to_string())]))?;
+    crate::api_limits::capture(p.id,model,&key,response.headers());
     let status = response.status();
     if !status.is_success() {
         let body = net::read_capped(response, net::MAX_ERROR_BODY).await.unwrap_or_default();

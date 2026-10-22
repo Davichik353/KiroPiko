@@ -1,8 +1,10 @@
 // Coucou for Windows — app wiring and the commands the island calls.
 
 mod agent_hooks;
+mod api_limits;
 mod agents;
 mod chat;
+mod cli_agents;
 mod claude;
 mod codex_plan;
 mod config_file;
@@ -199,6 +201,26 @@ fn reposition(app: AppHandle, shared: State<Shared>) {
     let collapsed = shared.gate.collapsed.load(Ordering::Relaxed);
     island::apply_geometry(&app, &pref, collapsed);
 }
+
+/// The panel is laid out in CSS px against the window's own scale. If the webview
+/// reports a different devicePixelRatio (it ends up bigger than the window and gets
+/// cut), correct its zoom so one CSS px is one logical px again.
+#[tauri::command]
+fn fit_zoom(app: AppHandle, dpr: f64) -> bool {
+    let Some(win) = island::window(&app) else { return false };
+    let scale = win.scale_factor().unwrap_or(1.0);
+    static ZOOM: std::sync::Mutex<f64> = std::sync::Mutex::new(1.0);
+    let mut zoom = ZOOM.lock().unwrap();
+    if let Some(new_zoom) = island::calculate_zoom_correction(*zoom, scale, dpr) {
+        *zoom = new_zoom;
+        log::line(format!("webview dpr {dpr} != window scale {scale} — setting zoom {new_zoom:.3}"));
+        let _ = win.set_zoom(new_zoom);
+        true
+    } else {
+        false
+    }
+}
+
 
 /// The displays the island can be pinned to, for Settings.
 #[tauri::command]
@@ -488,6 +510,23 @@ async fn chat_models(shared: State<'_, Shared>, provider: String) -> Result<Vec<
     chat::models(&settings, &provider).await.inspect_err(|_| log::line("model list failed"))
 }
 
+#[tauri::command]
+async fn chat_api_limits(shared: State<'_, Shared>, provider: String) -> Result<api_limits::Snapshot,String> {
+    let model = { let settings = shared.settings.lock().unwrap(); chat::model_for(&settings,&provider) };
+    api_limits::read(&provider,&model).await
+}
+
+/// A user-requested test with its own conversation, without files or chat history.
+#[tauri::command]
+async fn chat_probe(shared: State<'_, Shared>, provider: String, model: String) -> Result<chat::ChatReply,String> {
+    if !["anthropic","google","openai","openrouter","groq"].contains(&provider.as_str()) || model.is_empty() || model.len()>200 || model.chars().any(char::is_control) {
+        return Err("Invalid provider or model".into());
+    }
+    let settings = shared.settings.lock().unwrap().clone();
+    let conversation = chat::Chat::default();
+    chat::send_for_phone(&settings, &conversation, &provider, &model, "Connection test. Reply only: OK. Do not use tools.".into(), |_| {}).await
+}
+
 /// Settings → Local models → Connect: does the server answer, and with which models?
 #[tauri::command]
 async fn local_connect(provider: String, url: String) -> Result<local_chat::Connected, String> {
@@ -721,6 +760,7 @@ pub fn run() {
             set_island_rect,
             focus_window,
             reposition,
+            fit_zoom,
             list_monitors,
             open_url,
             open_in_vscode,
@@ -745,10 +785,14 @@ pub fn run() {
             log_line,
             chat_send,
             chat_models,
+            chat_api_limits,
+            chat_probe,
+            cli_agents::cli_agent,
             local_connect,
             local_set_key,
             chat_reset,
             ingest_file,
+            files::pick_chat_file,
             secret_present,
             secret_set,
             secret_clear,

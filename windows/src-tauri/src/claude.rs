@@ -172,6 +172,7 @@ async fn call(endpoint: &Url, key: &str, body: &Value) -> Result<Value, String> 
         .await
         .map_err(|e| tf("Network error: {error}", &[("error", &e.to_string())]))?;
 
+    crate::api_limits::capture("anthropic",body.get("model").and_then(Value::as_str).unwrap_or(""),key,response.headers());
     let status = response.status();
     if !status.is_success() {
         // Surface the API's own message, which is what makes a bad key obvious.

@@ -1,3 +1,7 @@
+import { focusText, tools } from "../nova/productivity/store";
+import { u, ul } from "../i18n/kiro";
+import { agentCounts } from "../nova/productivity/model";
+import { capsuleTask } from "../core/capsule-task";
 // The island: DOM shell, sizing animation, Mochi placement, mouse handling.
 // Mirrors IslandRootView.swift + IslandWindowController.swift.
 
@@ -60,6 +64,7 @@ export class Island {
   private botGlow!: HTMLElement;
   private greetingCanvas!: HTMLCanvasElement;
   private miniGrid!: HTMLElement;
+  private activityBadge!: HTMLElement;
   private countdown!: HTMLElement;
   private wakeStrip!: HTMLElement;
 
@@ -262,6 +267,13 @@ export class Island {
     this.botCanvas = h("canvas", { id: "bot-canvas" });
     this.greetingCanvas = h("canvas", { id: "greeting-canvas" });
     this.miniGrid = h("div", { id: "mini-grid" });
+    this.activityBadge = h("button", { id: "capsule-activity", type: "button", hidden: true, "aria-label": ul("Агенты и таймер"), onclick: () => {
+      const task=capsuleTask(State.tasks);
+      if(!task){this.setView("quick");return;}
+      State.setFocus(task.id);
+      const pending=State.pendingApproval?.pillId===task.id?State.pendingApproval:null;
+      this.setView(pending?pending.questions?"question":"approval":"overview");
+    } });
     this.countdown = h("div", { id: "countdown" });
 
     this.header = buildHeader(actions);
@@ -298,6 +310,7 @@ export class Island {
       this.botGlow,
       this.botCanvas,
       this.miniGrid,
+      this.activityBadge,
       this.countdown,
     );
 
@@ -399,6 +412,10 @@ export class Island {
   }
 
   setView(view: IslandViewName) {
+    if (view === "quick") {
+      this.takeKeyboard();
+      window.setTimeout(() => { if (State.mode === "expanded" && State.view === "quick") this.views.get("quick")?.focus?.(); }, 120);
+    }
     this.stopSequenceIfLeaving(view);
     if (view !== "overview") closePlanCard();
     if (State.mode !== "expanded" || this.fsm.state === "coucou") {
@@ -579,7 +596,11 @@ export class Island {
    * slow disk can never stall the animation — same as FileDropHandler on macOS.
    */
   private swallow(path: string) {
+    if(State.filePreparing || State.stateOverride==="thinking"){
+      State.noteMessage=u("Дождитесь завершения текущей операции.");this.setView("note");return;
+    }
     const name = path.split(/[\\/]/).pop() || "file";
+    State.filePreparing=true;
     State.droppedFile = { name, path };
     State.promptContext = { kind: "file", name, path };
     State.chatHistory = [];
@@ -602,12 +623,14 @@ export class Island {
       .then((file) => {
         // Cancelled (or replaced by another drop) while the copy was running.
         if (State.droppedFile?.path !== path) return;
-        State.droppedFile = { name: file.name, path: file.path };
+        State.droppedFile = { name: file.name, path: file.path, size:file.size };
+        State.filePreparing=false;
         State.promptContext = { kind: "file", name: file.name, path: file.path };
         State.notify();
       })
       .catch((err) => {
         if (State.droppedFile?.path !== path) return;
+        State.filePreparing=false;
         UploadSeq.deactivate();
         State.noteMessage = String(err).replace(/^Error:\s*/, "");
         this.engine.animateMorph(0);
@@ -619,6 +642,7 @@ export class Island {
 
   /** "Cancel" on the dropped file: forget it, so the chat does not pick it up. */
   private discardDrop() {
+    State.filePreparing=false;
     State.droppedFile = null;
     State.promptContext = null;
     this.setView(State.defaultView());
@@ -646,7 +670,7 @@ export class Island {
       this.engine.triggerEmote("happy");
     }
     // The extra second is the grow-back, after which the choose card is up.
-    if (since >= PRE_PROGRESS + dur + 1 && State.view === "uploading") {
+    if (since >= PRE_PROGRESS + dur + 1 && State.view === "uploading" && !State.filePreparing) {
       this.setView("choose");
     }
   }
@@ -684,6 +708,7 @@ export class Island {
     const w = this.width.value;
     const hh = this.height.value;
     const r = this.radius.value;
+    this.islandEl.dataset.mode = State.mode;
     this.islandEl.style.width = `${w}px`;
     this.islandEl.style.height = `${hh}px`;
     this.islandEl.style.visibility = State.mode === "hidden" && hh < 1 ? "hidden" : "visible";
@@ -692,7 +717,7 @@ export class Island {
     this.islandEl.style.transform = `translateX(-50%)`;
     // These follow the island as it resizes, so they belong here rather than in
     // the state-driven DOM sync.
-    this.miniGrid.style.left = "18px";
+    this.miniGrid.style.left = "54px";
     this.miniGrid.style.top = `${hh / 2 - 7}px`;
     this.greetingCanvas.style.left = `${(w - EXPANDED_W) / 2}px`;
     this.uploadCanvas.el.style.left = `${(w - EXPANDED_W) / 2}px`;
@@ -739,7 +764,7 @@ export class Island {
   // ── Input ───────────────────────────────────────────────────────────────────
 
   private wireInput() {
-    // The compact companion is drawn above the pill, outside its DOM bounds.
+    // Keep hit handling for a companion dragged outside the capsule.
     window.addEventListener("mousedown", (event) => {
       if (event.target instanceof Node && this.islandEl.contains(event.target)) return;
       if (!this.isBotHit(event.clientX, event.clientY)) return;
@@ -904,7 +929,7 @@ export class Island {
     }
 
     // Bot hover → love
-    const overBot = State.mode === "expanded" && State.stateOverride == null && this.isBotHit(x, y);
+    const overBot = State.mode !== "hidden" && State.stateOverride == null && this.isBotHit(x, y);
     if (overBot && !this.botHovering) this.botHoverIn(x, y);
     if (!overBot && this.botHovering) this.cancelBotHover();
     this.botHovering = overBot;
@@ -1065,10 +1090,10 @@ export class Island {
   private updateBotTargets() {
     const sceneSpace=State.mode==="expanded"&&State.view!=="greeting"&&!this.uploadActive?32:0;
     const p = botPosition(State.mode, State.view, Math.max(0,this.height.value-sceneSpace), State.uploadProgress);
-    if (State.mode === "compact") { p.cx = this.width.value / 2; p.cy = -35; p.diameter = 44; }
+    // Compact placement is shared with hit-testing and cursor tracking.
     this.botCx.target = p.cx;
     this.botCy.target = p.cy;
-    this.botSize.target = p.diameter / 0.6;
+    this.botSize.target = State.mode === "compact" ? p.diameter : p.diameter / 0.6;
 
     const greetingActive = State.mode === "expanded" && State.view === "greeting";
     // The drop canvas draws its own Mochi; two of them would overlap. Out on the
@@ -1084,7 +1109,7 @@ export class Island {
     const size = this.botSize.value;
     const w = Math.max(1, Math.round(size));
     const compact = State.mode === "compact";
-    const hCss = compact ? 72 : w + BOT_OVERHANG;
+    const hCss = compact ? w : w + BOT_OVERHANG;
     const wCss = w + BOT_SIDE * 2;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     if (this.canvasPx !== w || this.botCanvas.height !== Math.round(hCss * dpr)) {
@@ -1095,7 +1120,7 @@ export class Island {
       this.botCanvas.style.height = `${hCss}px`;
     }
     this.botCanvas.style.left = `${this.botCx.value - wCss / 2}px`;
-    this.botCanvas.style.top = compact ? `${-hCss + 2}px` : `${this.botCy.value - BOT_OVERHANG / 2 - hCss / 2}px`;
+    this.botCanvas.style.top = compact ? `${this.botCy.value - hCss / 2}px` : `${this.botCy.value - BOT_OVERHANG / 2 - hCss / 2}px`;
 
     const ctx = this.botCanvas.getContext("2d");
     if (!ctx) return;
@@ -1157,7 +1182,7 @@ export class Island {
   }
 
   private lookY(): number {
-    return -Math.tanh((State.mouse.y - this.botCy.value) / 200);
+    return -Math.tanh((State.mouse.y - (this.islandRect().y + this.botCy.value)) / 200);
   }
 
   private updateCountdown(nowMs: number) {
@@ -1183,6 +1208,8 @@ export class Island {
 
     const live = expanded && !greetingActive;
     this.contentEl.style.opacity = live ? "1" : "0";
+    this.contentEl.inert = !live;
+    this.contentEl.setAttribute("aria-hidden", String(!live));
     // While the drop sequence owns the body its buttons are painted on the canvas
     // underneath, so only the header may keep taking clicks up here.
     this.contentEl.style.pointerEvents = live && !this.uploadActive ? "auto" : "none";
@@ -1207,9 +1234,9 @@ export class Island {
     // The chat is the only view with a text field, so it is the only time the
     // island is allowed to take keyboard focus.
     if (this.lastSyncedView !== State.view) {
-      const wasChat = this.lastSyncedView === "prompt" || this.lastSyncedView === "mail";
+      const wasChat = this.lastSyncedView === "prompt" || this.lastSyncedView === "mail" || this.lastSyncedView === "quick";
       this.lastSyncedView = State.view;
-      if (State.view === "prompt" || State.view === "mail") {
+      if (State.view === "prompt" || State.view === "mail" || State.view === "quick") {
         void Bridge.focusWindow(true);
         const editingView = State.view;
         window.setTimeout(() => { if (State.mode === "expanded" && State.view === editingView) this.views.get(editingView)?.focus?.(); }, 120);
@@ -1224,9 +1251,21 @@ export class Island {
     if (showGrid) {
       const task = State.tasks.find(task => !task.isIntegration && task.state !== "idle");
       this.miniGrid.dataset.state = task?.state ?? "idle";
-      this.miniGrid.textContent = State.novaQuietActive ? "Не мешать · запросы сохранены" : State.pendingApproval ? "Нужно ваше разрешение" : task?.state === "finished" ? "Задача выполнена" : task?.state === "error" ? "Ошибка · откройте детали" : task ? `${task.name} работает…` : State.novaPhrase || "Киро рядом";
+      this.miniGrid.dataset.reaction = performance.now() < State.novaReactionUntil && ["love", "happy", "wink"].includes(State.novaReaction ?? "") ? "warm" : "";
+      this.miniGrid.textContent = State.novaQuietActive ? u("Не мешать · запросы сохранены") : State.pendingApproval ? u("Нужно ваше разрешение") : task?.state === "finished" ? u("Задача выполнена") : task?.state === "error" ? u("Ошибка · откройте детали") : task ? u("{name} работает…", {name:task.name}) : State.novaPhrase || u("Киро рядом");
     }
 
+    const counts = agentCounts(State.tasks);
+    const focus = focusText();
+    const due = tools().reminders.filter(item => item.done).length;
+    const target=capsuleTask(State.tasks);
+    const taskLabel=target ? u(target.state==="approval" || target.state==="question" ? "Ждёт ответа" : target.state==="error" ? "Ошибка" : target.state==="finished" ? "Готово" : "Работает") : "";
+    const badge = [taskLabel,focus,due ? `${due} !` : ""].filter(Boolean).join(" · ");
+    this.activityBadge.hidden = State.mode !== "compact" || !badge;
+    this.activityBadge.textContent = badge;
+    this.activityBadge.setAttribute("aria-label",target?`${target.name}: ${taskLabel}`:u("Агенты и таймер"));
+    this.activityBadge.title = u("Работают: {working}. Ждут ответа: {waiting}. {focus} Сработавших напоминаний: {due}", {...counts,focus:focus ? u("Фокус: {focus}.", {focus}) : "",due});
+    this.miniGrid.style.maxWidth = badge ? "calc(100% - 190px)" : "calc(100% - 70px)";
     syncMiniBotStates(State.tasks);
     this.engine.setState(State.effectiveState);
   }

@@ -2,6 +2,9 @@
    Every colour below is copied from the Swift views. */
 
 :root {
+  --kiro-accent: #b39ddb;
+  --kiro-success: #7fdbba;
+  --kiro-warm: #f4a7b9;
   color-scheme: dark;
 
   /* After the Latin fonts: the scripts of the other interface languages —
@@ -25,8 +28,8 @@
   --hairline: rgba(255, 255, 255, 0.035);
   --red: #f4505e;
   --red-text: #ff8d97;
-  --green: #22c55e;
-  --green-2: #34d399;
+  --green: #7fdbba;
+  --green-2: #7fdbba;
   --amber: #f5a524;
   --cyan: #22d3ee;
   --indigo: #6366f1;
@@ -1346,7 +1349,7 @@ input[type="range"]::-webkit-slider-thumb {
   flex: 0 0 28px;
   border: 0;
   border-radius: 50%;
-  background: #f4b38a;
+  background: #b39ddb;
   color: #100f16;
   display: grid;
   place-items: center;
@@ -1485,7 +1488,7 @@ input[type="range"]::-webkit-slider-thumb {
 .up-fill {
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(90deg, #1fa87a, #34d399);
+  background: linear-gradient(90deg, #1fa87a, #7fdbba);
 }
 
 .up-glow {

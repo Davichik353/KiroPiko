@@ -30,3 +30,15 @@ export function drawAvatar(ctx: CanvasRenderingContext2D, index: number, outfit:
   if (!source.costume) drawRigAccessories(ctx, outfit, source.pose, p, "front");
   return true;
 }
+
+/** A face-only crop of the existing rig; costumes and expressions stay shared. */
+export function drawHead(ctx: CanvasRenderingContext2D, index: number, outfit: Outfit, width: number, height: number): boolean {
+  const source = characterSource(index, outfit, true);
+  if (!source) return false;
+  const [x, y, w] = source.pose.rect;
+  const h = Math.max(1, source.pose.neck[1] - y);
+  const scale = Math.min(width / w, height / h) * .94;
+  const dw = w * scale, dh = h * scale;
+  ctx.drawImage(source.image, x, y, w, h, (width - dw) / 2, (height - dh) / 2, dw, dh);
+  return true;
+}

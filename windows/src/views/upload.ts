@@ -6,7 +6,9 @@
 import { h, clear } from "./dom";
 import { State } from "../core/state";
 import type { ViewActions, ViewHost } from "./views";
-import { N_, t, tl } from "../i18n/i18n";
+import { t, tl } from "../i18n/i18n";
+import {u,ul} from "../i18n/kiro";
+import {chooseChatFile} from "../core/attach-file";
 
 /** Dashed rounded rect drawn as SVG so the dashes can march like on macOS. */
 function dashedFrame(): SVGSVGElement {
@@ -27,19 +29,21 @@ function dashedFrame(): SVGSVGElement {
   return el;
 }
 
-export function buildUpload(): ViewHost {
+export function buildUpload(actions?:ViewActions): ViewHost {
   const frame = dashedFrame();
-  const title = h("div", { class: "drop-title", text: tl("Drop your files here") });
+  const title = h("div", { class: "drop-title", text: ul("Прикрепите один файл") });
+  const feedback=h("p",{class:"hint",role:"status"});
+  const choose=h("button",{class:"btn primary",text:ul("Выбрать файл"),onclick:async()=>{const result=await chooseChatFile();feedback.textContent=u(result.message);if(result.attached)actions?.setView("prompt");}});
   const tags = h(
     "div",
     { class: "drop-tags" },
-    ...[N_("PDF"), N_("Images"), N_("Code"), N_("Docs")].map((chip) => h("span", { text: tl(chip) })),
+    ...["TXT / MD", "Код", "Изображения", "PDF · Anthropic"].map((chip) => h("span", { text: ul(chip) })),
   );
   const card = h(
     "div",
     { class: "card drop-card" },
     frame,
-    h("div", { class: "drop-body" }, title, tags),
+    h("div", { class: "drop-body" }, title,h("p",{class:"hint",text:ul("Выберите файл кнопкой или перетащите сюда. Затем напишите вопрос в чате. Выбор файла начинает новый чат.")}),choose,tags,feedback),
   );
   const el = h("div", { class: "view" }, card);
 
@@ -47,6 +51,7 @@ export function buildUpload(): ViewHost {
     el,
     sync() {
       card.classList.toggle("over", State.fileDragOver);
+      choose.disabled=State.filePreparing || State.stateOverride==="thinking";
     },
   };
 }
@@ -67,13 +72,12 @@ export function buildUploading(): ViewHost {
   return {
     el,
     sync() {
-      const done = State.uploadProgress >= 0.999;
-      const pct = Math.round(State.uploadProgress * 100);
+      const done = !State.filePreparing;
       label.textContent = done
         ? `✓  ${State.droppedFile?.name ?? t("File")}`
-        : t("Uploading {name}", { name: State.droppedFile?.name ?? t("file") });
+        : u("Готовим файл на этом устройстве: {name}",{name:State.droppedFile?.name ?? t("file")});
       label.classList.toggle("done", done);
-      percent.textContent = done ? "" : `${pct} %`;
+      percent.textContent = done ? u("Ничего не отправлено") : "";
       const w = State.uploadProgress * 526;
       fill.style.width = `${w}px`;
       glow.style.transform = `translateX(${Math.max(0, w - 14)}px)`;
@@ -85,18 +89,18 @@ export function buildUploading(): ViewHost {
 
 export function buildChoose(actions: ViewActions): ViewHost {
   const title = h("div", { class: "title" });
-  const sub = h("div", { class: "sub", text: tl("What do you want to do with it?") });
+  const sub = h("div", { class: "sub", text: ul("Файл на этом устройстве. Откройте чат, напишите вопрос и отправьте его вместе с файлом.") });
   const row = h(
     "div",
     { class: "actions" },
     h("button", {
       class: "btn secondary",
-      text: "По электронной почте",
+      text: ul("По электронной почте"),
       onclick: () => actions.setView("mail"),
     }),
     h("button", {
       class: "btn primary",
-      text: tl("Ask a question"),
+      text: ul("Открыть чат с файлом"),
       onclick: () => actions.setView("prompt"),
     }),
     h("button", {

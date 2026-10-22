@@ -157,7 +157,7 @@ export function t(key: string, vars?: Vars): string {
   else text = key;
   // Keep upstream translation keys and literal paths compatible, while using
   // our product/character names. User-supplied interpolation values stay intact.
-  const branded = text.replace(/(?<![\\/])\bCoucou\b(?![\\/]| for Android)/g, "KiroPiko")
+  const branded = text.replace(/(?<![\\/])\bCoucou\b(?![\\/])/g, "KiroPiko")
     .replace(/\bMochi\b/g, current === "ru" ? "Киро" : "Kiro");
   return interpolate(branded, vars);
 }

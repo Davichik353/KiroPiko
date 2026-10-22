@@ -1,6 +1,6 @@
 app_name=KiroPiko
-about_unofficial=KiroPiko для Android. На основе Coucou: Louis Raillé и Rhytam Biswas.
-about_repo=На основе github.com/Louis-CFM/coucou
+about_unofficial=KiroPiko для Android — ваш AI-помощник, связанный с компьютером.
+about_repo=github.com/Davichik353/KiroPiko
 licences_title=Лицензии
 licences_intro=Код Coucou используется по лицензии MIT. В KiroPiko используются собственные персонаж, оформление, значки и звуки. Лицензии библиотек приведены ниже.
 about_assets=Персонаж Киро и оформление KiroPiko заменяют ресурсы Coucou. Исходный код Android: © Rhytam Biswas, MIT. Основа Coucou: © Louis Raillé.

@@ -5,6 +5,7 @@
 export type IslandMode = "hidden" | "compact" | "expanded";
 
 export type IslandViewName =
+  | "quick"
   | "history"
   | "connections"
   | "onboarding"
@@ -61,7 +62,8 @@ export interface ViewLayout {
 // drawn inside it, glued to the top edge and horizontally centred.
 export const PANEL_W = 720;
 export const PANEL_H = 448;
-export const NOVA_TOP = 80;
+// The capsule meets the top edge; no reserved space for a floating mascot.
+export const NOVA_TOP = 0;
 
 // No notch on a PC: these are the hidden/compact sizes from docs/SPEC.md.
 export const NOTCH_W = 184;
@@ -77,12 +79,13 @@ export const WAKE_STRIP_W = 240;
 export const WAKE_STRIP_H = 6;
 
 export const VIEW_LAYOUTS: Record<IslandViewName, ViewLayout> = {
+  quick: { height: 360, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
   history: { height: 300, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
   connections: { height: 300, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
   onboarding: { height: 250, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
   music: { height: 300, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
   doctor: { height: 300, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
-  developer: { height: 280, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
+  developer: { height: 408, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
   "nova-tools": { height: 340, botX: 46, botY: 94, botDiameter: 44, agentMode: "none" },
   overview: { height: 160, botX: 68, botY: null, botDiameter: 58, agentMode: "pills" },
   empty: { height: 160, botX: 70, botY: null, botDiameter: 62, agentMode: "none" },
@@ -121,7 +124,7 @@ export const QUESTION_PICKER_H = 200;
 
 /** Chat view grows with the conversation — IslandContainer.chatPromptHeight. */
 export function chatPromptHeight(messageCount: number): number {
-  return Math.min(300, 240 + messageCount * 40);
+  return Math.min(400, 320 + messageCount * 40);
 }
 
 export function islandSize(
@@ -161,7 +164,7 @@ export function botPosition(
     case "hidden":
       return { cx: 46, cy: 16, diameter: 6, opacity: 0 };
     case "compact":
-      return { cx: 40, cy: 16, diameter: 20, opacity: 1 };
+      return { cx: 29, cy: NOTCH_H / 2, diameter: 28, opacity: 1 };
     case "expanded": {
       const layout = VIEW_LAYOUTS[view];
       if (view === "uploading") {

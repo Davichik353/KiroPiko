@@ -1,0 +1,141 @@
+/* Shared product finish. Scoped rules preserve the transparent desktop shell. */
+:root {
+  --ui-canvas: #100f16;
+  --ui-surface: #191622;
+  --ui-raised: #241e30;
+  --ui-border: #ffffff12;
+  --ui-muted: #bdb2ca;
+  --ui-accent: #b39ddb;
+  --ui-success: #7fdbba;
+  --ui-warm: #f4a7b9;
+  --ui-radius: 12px;
+  --ui-control-radius: 8px;
+}
+.quota-provider { padding: 14px 0; border-bottom: 1px solid var(--ui-border); }
+.quota-body { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.quota-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 12px; }
+.quota-body small { font-size: 11px; color: var(--ui-muted); }
+.quota-track { height: 6px; background: #ffffff0c; border-radius: 4px; overflow: hidden; }
+.quota-track > span { display: block; height: 100%; background: var(--ui-success); border-radius: inherit; }
+.quota-track.low > span { background: var(--ui-warm); }
+.quota-track.unknown { background: repeating-linear-gradient(100deg,#ffffff10 0 5px,transparent 5px 10px); }
+
+/* Capsule, agent home, tools, history, diagnostics and onboarding. */
+#header .tabs { gap: 6px; }
+#header .tab { height: 28px; border-radius: var(--ui-control-radius); color: var(--ui-muted); }
+#header .tab.on { color: #f1e8ff; background: #b39ddb24; box-shadow: inset 0 0 0 1px #b39ddb30; }
+#header .tab-agents { width: auto; padding: 0 12px; font: 600 11px var(--font); }
+#header .header-actions { gap: 6px; }
+#header .header-actions > button { width: 28px; height: 28px; border-radius: 8px; }
+#header .header-actions > button:hover { background: #ffffff08; }
+.nova-wordmark { letter-spacing: .5px; font-size: 11px; }
+.nova-panel { background: var(--ui-surface); border-color: var(--ui-border); padding: 16px; border-radius: var(--ui-radius); }
+.nova-heading { align-items: flex-start; margin-bottom: 16px; gap: 12px; }
+.nova-heading > strong { font-size: 16px; letter-spacing: -.3px; line-height: 1.25; text-wrap: balance; }
+.nova-heading > span { font-size: 9px; line-height: 1.5; text-align: right; letter-spacing: .3px; max-width: 180px; color: var(--ui-muted); }
+.nova-panel .btn { border-radius: var(--ui-control-radius); min-height: 32px; font-size: 12px; }
+.nova-panel :is(p, .hint, .nova-status) { font-size: 12px; line-height: 1.6; }
+.nova-panel :is(input, select, textarea) { border-radius: var(--ui-control-radius); font-family: var(--font); }
+.nova-panel :is(button, a, summary) { cursor: pointer; }
+.nova-session-list { gap: 12px; margin-top: 0; }
+.agent-summary { gap: 0; padding: 0 0 16px; }
+.agent-summary > span { flex: 1; padding-left: 16px; border-left: 1px solid var(--ui-border); }
+.agent-summary > span:first-child { padding-left: 0; border-left: 0; }
+.agent-summary strong { font-size: 24px; letter-spacing: -.7px; font-weight: 600; }
+.agent-summary small { font-size: 11px; color: var(--ui-muted); }
+.agent-first-run { gap: 12px; padding: 8px 0 0; }
+.agent-first-run > strong { font-size: 16px; line-height: 1.35; letter-spacing: -.25px; text-wrap: balance; }
+.agent-first-run p { font-size: 12px; line-height: 1.65; }
+.agent-first-run > small { font-size: 11px; line-height: 1.5; }
+.nova-session { padding: 12px; border-color: var(--ui-border); background: var(--ui-raised); border-radius: 9px; gap: 8px; }
+.nova-session-title { font-size: 13px; }
+.nova-session small { font-size: 11px; line-height: 1.45; }
+.nova-session-step { font-size: 12px; }
+.kiro-tool-grid { gap: 0 18px; }
+.kiro-tool-link { padding: 13px 0; }
+.kiro-tool-link strong { font-size: 13px; }
+.kiro-tool-link small { font-size: 11px; line-height: 1.45; }
+.kiro-tool-detail summary { padding: 9px 0; }
+.nova-metric { border-color: var(--ui-border); padding: 10px; border-radius: 8px; }
+.nova-metric small, .nova-music small { font-size: 11px; line-height: 1.5; }
+.quick-section { border-color: var(--ui-border); }
+.quick-result { padding: 10px; border-radius: 8px; }
+.quick-result strong { font-size: 12px; }
+.quick-result small { font-size: 11px; }
+
+/* Chat and permission cards use the same reading rhythm. */
+.bubble { background: #b39ddb1c; border: 1px solid #b39ddb1c; padding: 9px 12px; border-radius: 10px; line-height: 1.6; }
+.reply { color: #d2c8dd; line-height: 1.6; }
+.chat-log { gap: 12px; }
+.chat-row.user { padding-left: 44px; }
+.chat-bar { border-radius: 10px; border: 1px solid var(--ui-border); background: var(--ui-raised); padding: 8px 10px; }
+.chat-input::placeholder { color: var(--ui-muted); }
+.chat-input:focus-visible { outline: none; }
+.chat-bar:focus-within { border-color: var(--ui-accent); box-shadow: 0 0 0 2px #b39ddb20; }
+.chat-routing { font-size: 11px; line-height: 1.5; }
+.approval-explanation, .task-summary { line-height: 1.6; }
+
+/* Settings: one navigation system, one form treatment. */
+.settings-window { --dim: var(--ui-muted); --card: var(--ui-surface); --hairline: var(--ui-border); }
+.settings-window .settings-sidebar { background: #14111c; padding-top: 26px; }
+.settings-window .settings-brand strong { font-size: 20px; letter-spacing: -.5px; }
+.settings-window .settings-brand > span { letter-spacing: 1px; color: var(--ui-muted); }
+.settings-window .settings-nav { gap: 4px; }
+.settings-window .settings-nav-item { min-height: 38px; font-size: 12px; border-radius: 8px; padding: 10px 12px; }
+.settings-window .settings-nav-item[aria-current="page"] { background: #b39ddb20; color: #f1e8ff; box-shadow: inset 2px 0 var(--ui-accent); }
+.settings-window .settings-page-header h1 { font-size: 26px; letter-spacing: -.6px; }
+.settings-window .settings-subtitle { font-size: 13px; line-height: 1.65; }
+.settings-window .settings-page { gap: 20px; }
+.settings-window .settings-page section { padding: 20px; border-radius: var(--ui-radius); gap: 16px; }
+.settings-window .settings-page section > h2 { font-size: 14px; padding-bottom: 14px; }
+.settings-window .settings-page .hint { font-size: 12px; line-height: 1.65; }
+.settings-window button:not(.switch):not(.settings-nav-item) { border-radius: var(--ui-control-radius); min-height: 32px; }
+.settings-window :is(input:not([type="range"]):not([type="checkbox"]), select, textarea) { border-radius: var(--ui-control-radius); }
+.settings-window .settings-row-label small { font-size: 11px; }
+.settings-window .agent-link-report { padding: 16px; gap: 10px; }
+.settings-window .agent-link-report strong { font-size: 13px; }
+.settings-window .agent-link-report p { font-size: 12px; }
+.settings-window .agent-link-report small { font-size: 11px; }
+.settings-window .free-provider-row { padding: 16px 0; gap: 10px; }
+.settings-window .free-provider-row > strong { font-size: 15px; }
+.settings-window .free-provider-row > code { font-size: 12px; }
+
+/* Notebook is an app window, using the same neutral surfaces and controls. */
+.notebook-window { font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif; background: var(--ui-canvas); }
+.notebook-window header { background: #14111c; padding: 24px 28px 18px; }
+.notebook-window .brand { letter-spacing: -.4px; }
+.notebook-window button { border-radius: var(--ui-control-radius); min-height: 34px; }
+.notebook-window :is(.recording, .cloud-confirm, .summary, .preview) { background: var(--ui-surface); border-color: var(--ui-border); border-radius: var(--ui-radius); }
+.notebook-window .muted { color: var(--ui-muted); }
+.notebook-window textarea { line-height: 1.7; }
+
+@media (max-width: 620px) {
+  .settings-window .settings-main { padding: 22px 16px 32px; }
+  .settings-window .settings-page section { padding: 16px; }
+  .settings-window .settings-nav-item { padding: 10px 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nova-panel *, .settings-window *, .notebook-window * { scroll-behavior: auto; }
+}
+.task-history { flex-shrink:0; font-size:12px; padding:6px 10px; border-top:1px solid var(--ui-border); }
+.task-history-list { max-height:180px; overflow:auto; }
+.task-history[open] { max-height:130px; overflow:auto; }
+.task-history button { background:var(--ui-surface);color:var(--ink);border:1px solid var(--ui-border);border-radius:8px;padding:5px 9px; }
+.chat-body.picking .task-history, .chat-body.picking .chat-quota { display:none; }
+.task-history-list details { padding:8px 0; }
+.task-history-list p { white-space:pre-wrap; overflow-wrap:anywhere; }
+.chat-quota { padding:8px 10px; font-size:12px; color:var(--ui-warm); max-height:100px; overflow:auto; flex-shrink:0; }
+.chat-quota button { margin:4px; }
+.settings-window section label { display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+.account-agent { padding:16px 0; border-top:1px solid var(--ui-border); }
+.account-agent .row { flex-wrap:wrap; gap:8px; margin:12px 0; }
+.account-agent small { display:block; color:var(--ui-muted); margin-top:6px; }
+.attach-file { align-self:flex-start;flex-shrink:0;padding:5px 9px;font-size:12px;border:1px solid var(--ui-border);border-radius:8px;background:var(--ui-surface);color:var(--ink); }
+.chat-file-feedback { font-size:11px;line-height:1.35;margin:0;max-height:46px;overflow:auto;flex-shrink:0; }
+.chat-file-destination { font-size:10px;color:var(--ui-muted);flex-shrink:0; }
+.chat-body.picking .chat-file-destination { display:none; }
+.chip-row { display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex-shrink:0; }
+.chip-row small { font-size:11px; }
+.chip-row button { font-size:11px;border-radius:6px;padding:3px 6px; }
+.drop-body .btn { align-self:flex-start; }
+.chat-body.picking .attach-file, .chat-body.picking .chat-file-feedback { display:none; }

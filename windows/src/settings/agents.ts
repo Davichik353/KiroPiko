@@ -55,7 +55,7 @@ export function agentsSection(list: AgentHookStatus[] | null): HTMLElement {
   );
 }
 
-function agentBlock(initial: AgentHookStatus): HTMLElement {
+export function agentBlock(initial: AgentHookStatus): HTMLElement {
   let status = initial;
   const head = h("div", { class: "row" });
   const body = h("div", { style: "display:flex;flex-direction:column;gap:10px" });

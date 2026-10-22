@@ -208,7 +208,7 @@ pub fn tf(key: &str, vars: &[(&str, &str)]) -> String {
         Some(Value::Object(forms)) => pick_plural(forms, "other").unwrap_or_else(|| key.to_string()),
         _ => key.to_string(),
     };
-    interpolate(&text, vars)
+    interpolate(&text.replace("Coucou", "KiroPiko").replace("Mochi", if lang == "ru" { "Киро" } else { "Kiro" }), vars)
 }
 
 /// A count with its words: `tn("{count} file", "{count} files", n, &[])`.
@@ -224,7 +224,7 @@ pub fn tn(one: &str, other: &str, count: u64, vars: &[(&str, &str)]) -> String {
         _ => None,
     };
     let text = text.unwrap_or_else(|| if count == 1 { one.to_string() } else { other.to_string() });
-    interpolate(&text, &all)
+    interpolate(&text.replace("Coucou", "KiroPiko").replace("Mochi", if lang == "ru" { "Киро" } else { "Kiro" }), &all)
 }
 
 #[cfg(test)]
@@ -254,7 +254,7 @@ mod tests {
         // From the Mac's catalog.
         assert_eq!(t("Allow"), "Autoriser");
         // From extra.json.
-        assert_eq!(t("Open Coucou"), "Ouvrir Coucou");
+        assert_eq!(t("Open Coucou"), "Ouvrir KiroPiko");
         assert_eq!(t("A string nobody translated"), "A string nobody translated");
         assert_eq!(tf("Open {name}", &[("name", "Vercel")]), "Ouvrir Vercel");
         set_for_test("en");

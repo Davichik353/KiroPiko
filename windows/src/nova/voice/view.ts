@@ -76,15 +76,17 @@ export function buildNovaTools(actions: ViewActions): ViewHost {
     } catch (err) { message.textContent = String(err).replace(/^Error:\s*/, ""); }
     finally { capture.disabled = false; troubleshoot = false; }
   });
-  const shortcut = (title: string, detail: string, view: "music" | "prompt" | "history" | "connections" | "onboarding" | "mail" | "upload") =>
+  const shortcut = (title: string, detail: string, view: "music" | "prompt" | "doctor" | "history" | "connections" | "onboarding" | "mail" | "upload") =>
     h("button", { class: "kiro-tool-link", onclick: () => actions.setView(view) },
       h("span", {}, h("strong", { text: title }), h("small", { text: detail })), h("span", { "aria-hidden": "true", text: "↗" }));
+  const musicShortcut = shortcut("Музыка", "Трек и управление плеером", "music");
   const body = h("div", { class: "kiro-toolbox" },
     h("div", { class: "kiro-tool-grid" },
       screenError,
       h("button", { class: "kiro-tool-link", onclick: () => Bridge.openNotebook() }, h("span", {}, h("strong", { text: "Заметки и диктовка" }), h("small", { text: "Словарь, расшифровки и итоги встреч" })), h("span", { "aria-hidden": "true", text: "↗" })),
       shortcut("AI-помощник", "Вопросы, файлы и ошибки", "prompt"),
-      shortcut("Музыка", "Трек и управление плеером", "music"),
+      shortcut("Диагностика компьютера", "Показатели Windows и System Doctor", "doctor"),
+      musicShortcut,
       shortcut("История", "Задачи и уведомления", "history"),
       shortcut("Подключения", "Модели, агенты и плеер", "connections"),
       shortcut("Электронная почта", "Письмо с вложением через Resend", "mail"),
@@ -102,5 +104,8 @@ export function buildNovaTools(actions: ViewActions): ViewHost {
     h("div", { class: "kiro-tool-bottom" },
       h("button", { class: "link-btn", text: "Пройти обучение", onclick: () => actions.setView("onboarding") }),
       h("button", { class: "link-btn", text: "Интеграции ↗", onclick: () => actions.openSettingsWindow() })));
-  return { el: panel("Инструменты", "ВАШ KIROPIKO", body), sync() {} };
+  return { el: panel("Инструменты", "ВАШ KIROPIKO", body), sync() {
+    musicShortcut.hidden = !(State.novaMusicPlaying || State.spotifyPlaying);
+    musicShortcut.style.display = musicShortcut.hidden ? "none" : "";
+  } };
 }

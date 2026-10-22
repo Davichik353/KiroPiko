@@ -1,8 +1,10 @@
+import { u } from "../i18n/kiro";
 // Settings window — the place where anything that writes to disk is confirmed.
 // Stage 2 covers the Claude Code hooks and the general preferences; API keys and
 // integrations land here too in a later stage.
 
 import "./settings.css";
+import "../ui/product.css";
 import { Bridge, IS_TAURI, onEvent, type HookPreview, type HookStatus, type ShortcutsReport } from "../core/bridge";
 import { readPreviewSettings } from "../nova/preview";
 import { CUSTOM_SERVER_KEY, providerDef, urlExposure } from "../core/providers";
@@ -17,10 +19,14 @@ import {
   sanitizeDeclared, toggleDeclared, type PillDefinition,
 } from "../core/pills";
 import { h, clear } from "../views/dom";
-import { agentsSection } from "./agents";
+import { agentSetupSection } from "./agent-setup";
+import { freeProvidersSection } from "./free-providers";
+import { apiLimitsSection } from "./api-limits";
+import { aiSetupSection } from "./ai-setup";
+import { cliAgentsSection } from "./cli-agents";
 import { phoneSection } from "./phone";
 import { supportSection } from "./support";
-import { settingsHero } from "./hero";
+import { mountSettings } from "./navigation";
 import { colorDot } from "./colors";
 import { renderDiff, statusDot } from "./parts";
 import {
@@ -36,7 +42,7 @@ let settings: Settings = { ...DEFAULT_SETTINGS };
 let version = "";
 
 const root = document.getElementById("settings-root")!;
-let disposeHero: (() => void) | undefined;
+
 
 async function save() {
   await Bridge.saveSettings(settings);
@@ -52,33 +58,56 @@ function pickColor(next: Record<string, string>) {
 
 function novaPermissions(): HTMLElement {
   const quiet = toggle(settings.novaDoNotDisturb, on => { settings.novaDoNotDisturb = on; void save(); });
-  quiet.setAttribute("aria-label", "Не мешать");
+  quiet.setAttribute("aria-label", u("Не мешать"));
   const fullscreen = toggle(settings.novaQuietFullscreen, on => { settings.novaQuietFullscreen = on; void save(); });
-  fullscreen.setAttribute("aria-label", "Тихо в полноэкранном режиме");
+  fullscreen.setAttribute("aria-label", u("Тихо в полноэкранном режиме"));
   const widthLabel = h("span", { text: `${settings.novaCapsuleWidth} px` });
-  const width = h("input", { type: "range", min: 260, max: 420, step: 4, value: settings.novaCapsuleWidth, "aria-label": "Ширина капсулы" }) as HTMLInputElement;
+  const width = h("input", { type: "range", min: 260, max: 420, step: 4, value: settings.novaCapsuleWidth, "aria-label": u("Ширина капсулы") }) as HTMLInputElement;
   width.addEventListener("input", () => { widthLabel.textContent = `${width.value} px`; settings.novaCapsuleWidth = Number(width.value); void save(); });
   const sizeLabel = h("span", { text: `${Math.round(settings.novaCharacterScale * 100)}%` });
-  const size = h("input", { type: "range", min: "70", max: "110", step: "5", value: Math.round(settings.novaCharacterScale * 100), "aria-label": "Размер Киро" }) as HTMLInputElement;
+  const size = h("input", { type: "range", min: "70", max: "110", step: "5", value: Math.round(settings.novaCharacterScale * 100), "aria-label": u("Размер Киро") }) as HTMLInputElement;
   size.addEventListener("input", () => { sizeLabel.textContent = `${size.value}%`; settings.novaCharacterScale = Number(size.value) / 100; void save(); });
   size.addEventListener("change", () => { settings.novaCharacterScale = Number(size.value) / 100; void save(); });
   const autoplay = toggle(settings.novaAutoplay, (on) => { settings.novaAutoplay = on; void save(); });
-  autoplay.setAttribute("aria-label", "Прогулки Киро при бездействии");
+  autoplay.setAttribute("aria-label", u("Прогулки Киро при бездействии"));
   const mic = toggle(settings.novaAllowMicrophone, (on) => { settings.novaAllowMicrophone = on; void save(); });
   const screen = toggle(settings.novaAllowScreenCapture, (on) => { settings.novaAllowScreenCapture = on; void save(); });
-  mic.setAttribute("aria-label", "Разрешить микрофон KiroPiko");
-  screen.setAttribute("aria-label", "Разрешить захват экрана KiroPiko");
-  return h("section", {}, h("h2", { text: "KiroPiko · разрешения" }),
-    h("div", { class: "row" }, h("span", { text: "Не мешать · игры, звонки и трансляции" }), quiet),
-    h("div", { class: "row" }, h("span", { text: "Автоматически при полноэкранной работе" }), fullscreen),
-    h("div", { class: "hint", text: "Windows сообщает о полноэкранной работе и режиме презентации. Для звонка Zoom или стрима включайте «Не мешать» вручную: универсального определения демонстрации экрана нет. Задания и запросы разрешений сохраняются." }),
-    h("div", { class: "row" }, h("span", { text: "Ширина капсулы" }), width, widthLabel),
-    h("div", { class: "row" }, h("span", { text: "Размер персонажа" }), size, sizeLabel),
-    h("div", { class: "hint", text: "Монитор для островка выбирается ниже в общих настройках: основной, под курсором или конкретный экран. В браузерном превью доступен только текущий экран." }),
-    h("div", { class: "row" }, h("span", { text: "Прогулки и футбол при бездействии" }), autoplay),
-    h("div", { class: "row" }, h("span", { text: "Микрофон · только по кнопке" }), mic),
-    h("div", { class: "row" }, h("span", { text: "Снимок экрана · только по запросу" }), screen),
-    h("div", { class: "hint", text: "Оба разрешения выключены по умолчанию. Диктовка работает локально через голосовой пакет Windows. Снимок прикрепляется к чату и передаётся модели только при отправке сообщения. System Doctor только читает показатели компьютера." }));
+  mic.setAttribute("aria-label", u("Разрешить микрофон KiroPiko"));
+  screen.setAttribute("aria-label", u("Разрешить захват экрана KiroPiko"));
+  const section = h("section", {}, h("h2", { text: u("Внешний вид и поведение") }),
+    h("div", { class: "row" }, h("span", { text: u("Не мешать · игры, звонки и трансляции") }), quiet),
+    h("div", { class: "row" }, h("span", { text: u("Автоматически при полноэкранной работе") }), fullscreen),
+    h("div", { class: "hint", text: u("Windows сообщает о полноэкранной работе и режиме презентации. Для звонка Zoom или стрима включайте «Не мешать» вручную: универсального определения демонстрации экрана нет. Задания и запросы разрешений сохраняются.") }),
+    h("div", { class: "row" }, h("span", { text: u("Ширина капсулы") }), width, widthLabel),
+    h("div", { class: "row" }, h("span", { text: u("Размер персонажа") }), size, sizeLabel),
+    h("div", { class: "hint", text: u("Монитор для островка выбирается в разделе «Общие»: основной, под курсором или конкретный экран. В браузерном превью доступен только текущий экран.") }),
+    h("div", { class: "row" }, h("span", { text: u("Прогулки и футбол при бездействии") }), autoplay),
+    h("div", { class: "row" }, h("span", { text: u("Микрофон · только по кнопке") }), mic),
+    h("div", { class: "row" }, h("span", { text: u("Снимок экрана · только по запросу") }), screen),
+    h("div", { class: "hint", text: u("Оба разрешения выключены по умолчанию. Диктовка работает локально через голосовой пакет Windows. Снимок прикрепляется к чату и передаётся модели только при отправке сообщения. System Doctor только читает показатели компьютера.") }));
+  const descriptions: Record<string, string> = {
+    [u("Не мешать · игры, звонки и трансляции")]: u("Убирает лишние звуки и реакции. Запросы агентов остаются доступны."),
+    [u("Автоматически при полноэкранной работе")]: u("Включает тишину, когда Windows сообщает об игре или презентации."),
+    [u("Ширина капсулы")]: u("Меняет ширину свёрнутой панели у верхнего края экрана."),
+    [u("Размер персонажа")]: u("Размер Киро в раскрытой панели и на рабочем столе. Голова в капсуле остаётся компактной."),
+    [u("Прогулки и футбол при бездействии")]: u("Позволяет Киро выходить на рабочий стол, когда вы не заняты."),
+    [u("Микрофон · только по кнопке")]: u("Разрешает голосовой ввод. Самостоятельно запись не начинается."),
+    [u("Снимок экрана · только по запросу")]: u("Позволяет прикрепить снимок к чату после вашего действия."),
+  };
+  section.querySelectorAll<HTMLElement>(".row").forEach((row, i) => {
+    const label = row.firstElementChild as HTMLElement | null;
+    const hint = label && descriptions[label.textContent ?? ""];
+    if (!label || !hint) return;
+    const text = label.textContent ?? "";
+    label.classList.add("settings-row-label");
+    const note = h("small", { id: `capsule-hint-${i}`, text: hint });
+    label.append(note);
+    row.querySelectorAll("button, input").forEach(control => {
+      control.setAttribute("aria-describedby", note.id);
+      if (!control.hasAttribute("aria-label")) control.setAttribute("aria-label", text);
+    });
+  });
+  return section;
 }
 
 function toggle(on: boolean, onChange: (v: boolean) => void): HTMLElement {
@@ -568,6 +597,8 @@ function chatProvidersSection(
     const p = providerDef(def.id);
     const key = p.key!;
     const input = h("input", {
+      id: `provider-key-${def.id}`,
+      "aria-label": u("API-ключ {name}",{name:def.name}),
       type: "password",
       placeholder: present[key] ? CHAT_STRINGS.stored : def.placeholder,
       autocomplete: "off",
@@ -1300,7 +1331,7 @@ function applyLanguage() {
 
 function applyDirection() {
   document.documentElement.dir = isRtl() ? "rtl" : "ltr";
-  document.title = "Настройки — KiroPiko";
+  document.title = u("Настройки — KiroPiko");
 }
 
 let rendering: Promise<void> | null = null;
@@ -1358,7 +1389,8 @@ async function main() {
 
 /** Reads what the sections show and draws them all. */
 async function render() {
-  const status = (await Bridge.hooksStatus()) ?? {
+  const hookStatus = await Bridge.hooksStatus();
+  const status = hookStatus ?? {
     installed: false, planRelayInstalled: false, settingsPath: "", hookPath: "", hookReady: false,
   };
   const agents = await Bridge.agentHooksList();
@@ -1398,35 +1430,20 @@ async function render() {
   declaredViews.length = 0;
   localRedraw = null;
   shortcutsListener = null;
-  disposeHero?.();
-  const hero = settingsHero(() => settings);
-  disposeHero = hero.dispose;
   clear(root);
-  root.append(
-    h("h1", {}, h("span", { text: "KiroPiko" }), h("span", { class: "version", text: version })),
-    hero.element,
-    !IS_TAURI ? h("section", { class: "preview-banner" },
-      h("strong", { text: "Браузерное превью" }),
-      h("p", { text: "Внешний вид и выбор персонажей сохраняются в этом браузере. Подключение агентов, API-ключи и системные функции работают в приложении Windows." }),
-      h("button", { class: "btn", text: "← Вернуться к KiroPiko", onclick: () => window.location.assign("/") })) : document.createTextNode(""),
-    novaPermissions(),
-    supportSection(version),
-    claudeSection(status),
-    agentsSection(agents),
-    planSection(status),
-    apiSection(hasKey),
-    chatProvidersSection(chatKeys, keyChanged),
-    localSection(customKey),
-    activePillsSection(connected),
-    integrationsSection(present),
-    phoneSection(settings.phoneLink ?? false, toggle, settings),
-    generalSection(),
-    shortcutsSection(shortcutReport),
-    h("div", {
-      class: "hint",
-      text: t("No telemetry. Network requests only go to the services you configure yourself."),
-    }),
-  );
+  mountSettings(root, version, [
+    {id:"accounts",title:u("Без API-ключа"),description:u("Codex, Cursor и Claude Code через личный аккаунт."),tip:u("Сначала проверьте наличие CLI и вход. Затем проверьте ответ или откройте сессию агента."),sections:[cliAgentsSection()]},
+    { id: "capsule", title: u("Капсула и Киро"), description: u("Внешний вид, поведение и разрешения вашего помощника."), tip: u("Голова Киро находится внутри капсулы и следит за курсором. Изменения применяются сразу."), sections: [novaPermissions()] },
+    { id: "general", title: u("Общие"), description: u("Звуки, язык, монитор и запуск вместе с Windows."), tip: u("Выберите монитор для капсулы. «Под курсором» переносит её на экран, которым вы пользуетесь."), sections: [generalSection()] },
+    { id: "agents", title: u("Агенты"), description: u("Подключите инструменты разработки и выберите активные карточки."), tip: u("Для подключения сначала показывается список изменений. Ваши собственные настройки и хуки сохраняются."), sections: [agentSetupSection(hookStatus,agents,claudeSection), h("details",{class:"agent-advanced"},h("summary",{text:u("Карточки и использование плана")}),activePillsSection(connected),planSection(status))] },
+    { id: "models", title: u("Чат и модели"), description: u("Облачные провайдеры и локальные модели для общения с Киро."), tip: u("Для облачной модели нужен ключ её провайдера. Локальный сервер должен быть запущен на вашем компьютере или в вашей сети."), sections: [aiSetupSection(()=>settings,async next=>{await Bridge.saveSettingsChecked(next);settings=next;}),freeProvidersSection(()=>settings,async next=>{await Bridge.saveSettingsChecked(next); settings=next;}),chatProvidersSection(chatKeys, keyChanged), apiSection(hasKey), localSection(customKey)] },
+    { id: "limits", title: u("Лимиты AI"),description:u("Остаток запросов, токенов и квоты ключа."),tip:u("Значения поступают от API провайдера. Неизвестный остаток показан отдельной полоской без процента."),sections:[apiLimitsSection()] },
+    { id: "integrations", title: u("Интеграции"), description: u("Подключения к вашим сервисам и источникам событий."), tip: u("Включайте только нужные подключения. Секреты вводятся в приложении и хранятся в системном хранилище."), sections: [integrationsSection(present)] },
+    { id: "phone", title: u("Телефон"), description: u("Связь с Android и выбор доступных телефону данных."), tip: u("Сначала свяжите устройства по QR-коду. Доступ к чату, деталям и другим данным включается отдельно на компьютере."), sections: [phoneSection(settings.phoneLink ?? false, toggle, settings)] },
+    { id: "shortcuts", title: u("Горячие клавиши"), description: u("Открывайте капсулу и вызывайте действия с клавиатуры."), tip: u("Нажмите на сочетание и введите новое. Если оно занято другой программой, выберите другое."), sections: [shortcutsSection(shortcutReport)] },
+    { id: "support", title: u("О программе"), description: u("Версия, поддержка и диагностика KiroPiko."), tip: u("Перед отправкой диагностического отчёта просмотрите его содержимое."), sections: [supportSection(version), h("p", { class: "hint", text: t("No telemetry. Network requests only go to the services you configure yourself.") })] },
+  ], !IS_TAURI);
+
 }
 
 void main();

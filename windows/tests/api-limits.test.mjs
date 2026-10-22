@@ -1,0 +1,30 @@
+import { test, afterEach, mock } from "node:test";
+import assert from "node:assert/strict";
+import { remainingPercent, staleLimit } from "../src/core/api-limits.ts";
+import { apiLimitsSection } from "../src/settings/api-limits.ts";
+import { Bridge } from "../src/core/bridge.ts";
+import { setLanguage } from "../src/i18n/i18n.ts";
+import { installFakeDom } from "./fakedom.mjs";
+afterEach(()=>mock.restoreAll());
+test("quota math distinguishes zero, unknown and old snapshots",()=>{
+  assert.equal(remainingPercent({limit:100,remaining:25}),25);
+  assert.equal(remainingPercent({limit:0,remaining:0}),0);
+  assert.equal(remainingPercent({limit:100,remaining:120}),100);
+  assert.equal(remainingPercent({limit:NaN,remaining:0}),null);
+  assert.equal(remainingPercent({limit:100,remaining:-1}),null);
+  assert.equal(staleLimit(1000,122000),true);assert.equal(staleLimit(1000,2000),false);
+});
+test("each cloud provider has an unknown bar until the API reports quota; errors clear values",async()=>{
+  installFakeDom();setLanguage("ru");const view=apiLimitsSection();
+  assert.equal(view.find(".quota-provider").length,5);
+  assert.ok(view.find(".quota-track").every(bar=>bar.getAttribute("aria-valuenow")===null));
+  mock.method(Bridge,"apiLimits",async()=>({provider:"groq",model:"test",at:Date.now(),source:"headers",buckets:[{kind:"requests-day",limit:100,remaining:25,reset:null}]}));
+  const refresh=view.find("button").find(button=>button.getAttribute("aria-label")==="Обновить лимиты Groq");
+  for(const fn of refresh.listeners.get("click"))await fn({});
+  const row=view.find(".quota-provider").find(row=>row.textContent.startsWith("Groq"));
+  assert.equal(row.find(".quota-track")[0].getAttribute("aria-valuenow"),"25");
+  mock.method(Bridge,"apiLimits",async()=>{throw new Error("network");});
+  for(const fn of refresh.listeners.get("click"))await fn({});
+  assert.equal(row.find(".quota-track")[0].getAttribute("aria-valuenow"),null);
+  assert.match(row.textContent,/Не удалось получить лимиты/);assert.equal(refresh.disabled,false);
+});

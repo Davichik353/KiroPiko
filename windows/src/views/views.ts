@@ -1,3 +1,5 @@
+import { buildQuick } from "../nova/productivity/view";
+import { ul } from "../i18n/kiro";
 // Island views — DOM ports of IslandViewContent.swift. Paddings, font sizes,
 // colours and wording are copied from the Swift views so both platforms read
 // identically.
@@ -115,12 +117,13 @@ function stack(padLeft: number, padRight: number, ...children: Node[]): HTMLElem
 // ── Header ────────────────────────────────────────────────────────────────────
 
 export function buildHeader(actions: ViewActions): ViewHost {
+  const tabQuick = h("button", { class: "tab", title: ul("Поиск, фокус и напоминания · Ctrl+Shift+K"), "aria-label": ul("Быстрые действия"), text: "⌕", onclick: () => go("quick") });
   const tabHome = h("button", { class: "tab", title: tl("Overview"), onclick: () => go("overview") }, svg(ICONS.house, 13));
   const tabChat = h("button", { class: "tab", title: tl("Ask"), onclick: () => go("prompt") }, svg(ICONS.bubble, 13));
   const tabDrop = h("button", { class: "tab", title: tl("Drop"), onclick: () => go("upload") }, svg(ICONS.plus, 13));
-  const tabDoctor = h("button", { class: "tab nova-tab", title: "Диагностика Windows", "aria-label": "System Doctor", onclick: () => go("doctor"), text: "PC" });
-  const tabDev = h("button", { class: "tab nova-tab", title: "Сессии агентов", "aria-label": "Developer Mode", onclick: () => go("developer"), text: "</>" });
-  const tabTools = h("button", { class: "tab nova-tab", title: "Vision, Voice и интеграции", "aria-label": "Инструменты KiroPiko", onclick: () => go("nova-tools"), text: "✦" });
+  const tabDoctor = h("button", { class: "tab nova-tab", title: ul("Диагностика Windows"), "aria-label": "System Doctor", onclick: () => go("doctor"), text: "PC" });
+  const tabDev = h("button", { class: "tab tab-agents", title: ul("Сессии агентов"), "aria-label": ul("Ваши AI-агенты"), onclick: () => go("developer"), text: ul("Агенты") });
+  const tabTools = h("button", { class: "tab nova-tab", title: ul("Vision, Voice и интеграции"), "aria-label": ul("Инструменты KiroPiko"), onclick: () => go("nova-tools"), text: "✦" });
   const tabMusic = h("button", { class: "tab", title: "Музыка", "aria-label": "Музыка", onclick: () => go("music") }, svg(ICONS.musicNote, 13));
 
   const gearBtn = h("button", { title: tl("Settings"), onclick: () => go("settings") }, svg(ICONS.gear, 14));
@@ -139,7 +142,7 @@ export function buildHeader(actions: ViewActions): ViewHost {
   const el = h(
     "div",
     { id: "header" },
-    h("div", { class: "tabs" }, h("span", { class: "nova-wordmark", text: "KiroPiko" }), tabHome, tabChat, tabDoctor, tabDev, tabMusic, tabDrop, tabTools),
+    h("div", { class: "tabs" }, h("span", { class: "nova-wordmark", text: "KiroPiko" }), tabDev, tabHome, tabQuick, tabMusic, tabTools),
     h("div", { class: "header-actions" }, planPills, gearBtn, soundBtn),
   );
   const headerActions = el.lastElementChild as HTMLElement;
@@ -148,6 +151,7 @@ export function buildHeader(actions: ViewActions): ViewHost {
     el,
     sync() {
       const v = State.view;
+      tabQuick.classList.toggle("on", v === "quick");
       tabHome.classList.toggle("on", v === "overview" || v === "empty");
       tabChat.classList.toggle("on", v === "prompt");
       tabDrop.classList.toggle("on", v === "upload");
@@ -155,6 +159,10 @@ export function buildHeader(actions: ViewActions): ViewHost {
       tabDev.classList.toggle("on", v === "developer");
       tabTools.classList.toggle("on", v === "nova-tools");
       tabMusic.classList.toggle("on", v === "music");
+      // Keep an already open player usable after pressing Pause.
+      const musicVisible = State.novaMusicPlaying || State.spotifyPlaying || (State.mode === "expanded" && v === "music");
+      tabMusic.hidden = !musicVisible;
+      tabMusic.style.display = musicVisible ? "" : "none";
       gearBtn.classList.toggle("on", v === "settings");
       clear(gearBtn);
       gearBtn.append(svg(v === "settings" ? ICONS.gearFill : ICONS.gear, 14));
@@ -832,6 +840,7 @@ export function buildViews(
   onChatHeightChange: () => void,
 ): Map<IslandViewName, ViewHost> {
   const map = new Map<IslandViewName, ViewHost>();
+  map.set("quick", buildQuick(actions));
   map.set("doctor", buildDoctor(actions));
   map.set("developer", buildDeveloper(actions));
   map.set("nova-tools", buildNovaTools(actions));
@@ -849,7 +858,7 @@ export function buildViews(
   map.set("note", buildNote());
   map.set("settings", buildSettings(actions));
   map.set("prompt", buildPrompt(onChatHeightChange));
-  map.set("upload", buildUpload());
+  map.set("upload", buildUpload(actions));
   map.set("uploading", buildUploading());
   map.set("choose", buildChoose(actions));
   map.set("recap", buildRecap(actions));

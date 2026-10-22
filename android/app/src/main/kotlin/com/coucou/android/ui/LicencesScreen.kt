@@ -36,6 +36,7 @@ fun LicencesScreen(onBack: () -> Unit) {
     ) {
         item { ScreenTitle(stringResource(R.string.licences_title), onBack) }
         item { Text(stringResource(R.string.licences_intro), Modifier.padding(horizontal = 4.dp), style = TypeScale.SECONDARY.style(t.textDim.c())) }
+        item { Text(stringResource(R.string.about_assets), Modifier.padding(horizontal = 4.dp), style = TypeScale.SECONDARY.style(t.textDim.c())) }
         items(paragraphs) { p ->
             Text(p, Modifier.padding(horizontal = 4.dp), style = TypeScale.SECONDARY.style(t.text.c()).copy(fontFamily = FontFamily.Monospace))
         }

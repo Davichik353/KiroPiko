@@ -353,7 +353,7 @@ test("island keys are read before the chat field sees them, and only while open"
 
 test("the island toggle opens with the keyboard, and closes an open island", () => {
   runGlobalShortcut(host, "toggleIsland", resume);
-  assert.deepEqual(did, ["resume", "alert:overview", "keyboard"]);
+  assert.deepEqual(did, ["resume", "alert:developer", "keyboard"]);
   did = [];
   State.mode = "expanded";
   runGlobalShortcut(host, "toggleIsland", resume);

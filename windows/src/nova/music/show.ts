@@ -44,5 +44,6 @@ export async function refreshMusicShow() {
     State.novaMusicPlaying = false;
     if (key) { key = ""; ++epoch; document.documentElement.style.removeProperty("--kiro-music-accent"); }
     void emitToWindow("mochi", "nova-music-playing", false);
+    State.notify();
   } finally { busy = false; }
 }

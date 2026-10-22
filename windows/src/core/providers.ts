@@ -67,12 +67,15 @@ export function visibleProviders(settings: Settings): ProviderDef[] {
 
 /** The model to keep once the list arrives: the saved one if offered, else a sensible one. */
 export function pickModel(provider: ProviderDef, offered: string[], current: string): string | null {
+  if (provider.id === "openrouter" && isFreeRouterModel(current)) offered = offered.filter(isFreeRouterModel);
   if (offered.length === 0) return null;
   if (offered.includes(current)) return current;
   const preferred = provider.prefer ? offered.find((id) => id.includes(provider.prefer!)) : undefined;
   if (preferred) return preferred;
   return offered.includes(provider.defaultModel) ? provider.defaultModel : offered[0];
 }
+
+export function isFreeRouterModel(id: string): boolean { return id === "openrouter/free" || id.endsWith(":free"); }
 
 // ── Where an address points ───────────────────────────────────────────────────
 

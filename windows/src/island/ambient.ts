@@ -1,3 +1,4 @@
+import { COMPANION_COLORS, KIRO_ACCENT, KIRO_SUCCESS } from "../nova/palette";
 import { BotEngine } from "../mochi/engine";
 import { h } from "../views/dom";
 import type { BotStateName } from "../core/layout";
@@ -15,7 +16,7 @@ export class IslandAmbient {
   private dots=Array.from({length:36},()=>({x:Math.random(),y:Math.random(),r:.55+Math.random()*.65}));
   private cast=Array.from({length:5},(_,i)=>{
     const bot=new BotEngine();bot.isMini=true;
-    bot.bodyColor=([[.957,.702,.541],[.72,.64,.84],[.91,.62,.65],[.60,.52,.70],[.94,.84,.68]] as const)[i];
+    bot.bodyColor=COMPANION_COLORS[i];
     return {bot,x:(i+1)/6,direction:i%2?-1:1};
   });
   observe(host:HTMLElement,wake:()=>void) {
@@ -34,7 +35,7 @@ export class IslandAmbient {
     if(!changed&&moving&&ms-this.last<1000/30)return true;
     const elapsed=Math.min(.05,Math.max(0,(ms-this.last)/1000));this.last=ms;
     const ctx=this.ctx;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
-    const tint=state==="error"||state==="ratelimit"?"#ed8996":state==="approval"||state==="question"?"#f4c97d":state==="finished"?"#c2d9ad":"#f4b38a";
+    const tint=state==="error"||state==="ratelimit"?"#ed8996":state==="approval"||state==="question"?"#f4c97d":state==="finished"?KIRO_SUCCESS:KIRO_ACCENT;
     const wash=ctx.createLinearGradient(0,h-36,0,h);wash.addColorStop(0,tint+"00");wash.addColorStop(1,tint+"18");ctx.fillStyle=wash;ctx.fillRect(0,h-36,w,36);
     for(const p of this.dots){if(moving){p.y-=elapsed*.035;if(p.y<0)p.y=1;}
       let x=p.x*w,y=h-36+p.y*32;

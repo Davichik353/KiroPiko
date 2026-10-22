@@ -229,7 +229,7 @@ fun SettingsScreen(model: AppModel, onHistory: () -> Unit, onGallery: () -> Unit
             }
         }
 
-        // Required by Louis Raillé's permission: visible, one tap from Home.
+        // Product information; source attribution is available under Licences.
         item { SectionHeading(stringResource(R.string.settings_section_about)) }
         item {
             Panel {
@@ -240,7 +240,6 @@ fun SettingsScreen(model: AppModel, onHistory: () -> Unit, onGallery: () -> Unit
                         Modifier.clickable(role = Role.Button) { runCatching { uri.openUri(Attribution.REPO_URL) } },
                         style = TypeScale.BODY.style(t.text.c()).copy(textDecoration = TextDecoration.Underline),
                     )
-                    Text(stringResource(R.string.about_assets), style = TypeScale.SECONDARY.style(t.textDim.c()))
                 }
                 RowDivider()
                 LinkRow(stringResource(R.string.licences_title), onLicences)

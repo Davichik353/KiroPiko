@@ -11,12 +11,18 @@ import { ICONS } from "./icons";
 import { renderMarkdown } from "./markdown";
 import { Bridge, onEvent, type ChatContext, type ModelInfo } from "../core/bridge";
 import {
-  activeModel, pickModel, providerDef, visibleProviders, withModel, type ProviderDef,
+  activeModel, pickModel, providerDef, visibleProviders, withModel, isFreeRouterModel, type ProviderDef,
 } from "../core/providers";
 import { Sound } from "../core/sound";
 import { Speech } from "../nova/voice/speech";
 import { showNotice } from "../nova/preview";
 import { chooseAutoModel } from "../nova/assistant/auto-model";
+import { u, ul } from "../i18n/kiro";
+import { readTasks, saveTask, clearTasks } from "../core/task-history";
+import { lowQuota } from "../core/api-limits";
+import { PROVIDERS } from "../core/providers";
+import { chooseChatFile } from "../core/attach-file";
+import { attachmentProblem } from "../core/attachments";
 import { State, type ChatMessage } from "../core/state";
 import type { ViewHost } from "./views";
 import { N_, t, tl } from "../i18n/i18n";
@@ -216,6 +222,16 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
   }) as HTMLInputElement;
   const send = h("button", { class: "send-btn", title: tl(STRINGS.send) }, svg(ICONS.arrowUp, 11));
   const bar = h("div", { class: "chat-bar" }, input, send);
+  const fileFeedback=h("p",{class:"chat-file-feedback",role:"status","aria-live":"polite",hidden:true});
+  const fileDestination=h("small",{class:"chat-file-destination"});
+  const attach=h("button",{type:"button",class:"attach-file",text:ul("Прикрепить файл"),title:ul("Выбор файла начнёт новый чат. Сам файл отправится только вместе с вашим сообщением.")});
+  attach.onclick=async()=>{
+    if(sending)return;
+    const result=await chooseChatFile();
+    fileFeedback.textContent=u(result.message);fileFeedback.hidden=false;
+    if(result.attached){renderedCount=-1;input.focus();}
+    State.notify();onHeightChange();
+  };
 
   const modelDot = h("i", { class: "model-dot" });
   const modelName = h("span", { class: "model-name" });
@@ -247,11 +263,42 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
   stopSpeech.addEventListener("click", () => Speech.stop());
 
   const body = h("div", { class: "chat-body" });
+  const quota = h("div",{class:"chat-quota",role:"status",hidden:true});
+  let quotaRequest=0;
+  async function refreshQuota(provider:string,model:string) {
+    const ticket=++quotaRequest;quota.hidden=true;clear(quota);
+    try {
+      const snapshot=await Bridge.apiLimits(provider);
+      if(ticket!==quotaRequest || provider!==State.settings.chatProvider || !lowQuota(snapshot,provider,model))return;
+      const alternatives=[];
+      for(const p of PROVIDERS.filter(p=>p.key && p.id!==provider))if(await Bridge.secretPresent(p.key!))alternatives.push(p);
+      if(ticket!==quotaRequest || provider!==State.settings.chatProvider)return;
+      quota.append(h("p",{text:u("Осталось не более 15% лимита. Можно выбрать другой сервис с сохранённым ключом. Его доступность и тариф проверяются отдельно.")}));
+      for(const p of alternatives)quota.append(h("button",{text:p.name,onclick:async()=>{
+        if(sending)return;
+        const next={...State.settings,chatProvider:p.id,chatAutoModel:false};
+        try{await Bridge.saveSettingsChecked(next);State.settings=next;quotaRequest++;quota.hidden=true;State.notify();picker.open();}catch{showNotice(u("Не удалось сохранить настройки. Повторите попытку."));}
+      }}));
+      if(!alternatives.length)quota.append(h("button",{text:u("Подключить другой AI"),onclick:()=>void Bridge.openSettingsWindow()}));
+      quota.dataset.provider=provider;quota.hidden=false;
+      window.setTimeout(()=>{if(ticket===quotaRequest)quota.hidden=true;},Math.max(0,snapshot.at+120000-Date.now()));
+    }catch{/* Unknown quota must never become a low-quota warning. */}
+  }
+  const historyList=h("div",{class:"task-history-list"});
+  const history=h("details",{class:"task-history"},h("summary",{text:ul("История задач чата")}),h("p",{class:"hint",text:ul("Последние 50 задач хранятся на этом устройстве. Повтор заполняет поле ввода; отправьте его после проверки. Файлы нужно приложить заново.")}),historyList);
+  function drawHistory(){
+    clear(historyList);
+    const tasks=readTasks();
+    if(!tasks.length)historyList.append(h("p",{text:u("Сохранённых задач пока нет.")}));
+    for(const task of tasks)historyList.append(h("details",{},h("summary",{text:task.query.slice(0,100)}),h("small",{text:`${task.provider} · ${task.model} · ${new Date(task.at).toLocaleString()} · ${Math.round(task.duration/1000)} s`}),h("p",{text:task.failed?u("Не удалось получить ответ."):task.answer}),h("button",{text:u("Повторить"),disabled:sending,onclick:()=>{if(sending)return;input.value=task.query;history.open=false;input.focus();routing.textContent=u("Запрос подготовлен. Он будет отправлен в текущем чате выбранной модели; проверьте контекст и вложения.");}})));
+    historyList.append(h("button",{text:u("Удалить историю задач"),onclick:()=>{try{clearTasks();drawHistory();}catch{showNotice(u("Не удалось удалить историю."));}}}));
+  }
+  history.addEventListener("toggle",()=>{if(history.open)drawHistory();});
   const picker = buildPicker(() => {
     body.classList.toggle("picking", picker.isOpen);
     drawModelButton();
   });
-  body.append(chipRow, log, picker.el, routing, modelRow, bar);
+  body.append(chipRow, log, picker.el, quota, history, fileFeedback, routing, modelRow, attach,fileDestination, bar);
 
   const el = h("div", { class: "view" }, h("div", { class: "card wash chat-card" }, body));
   (el.querySelector(".card") as HTMLElement).style.setProperty("--wash", "rgba(99,102,241,0.5)");
@@ -291,11 +338,19 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
 
   async function submit() {
     const query = input.value.trim();
-    if (!query || sending) return;
+    if (!query || sending || State.filePreparing) return;
+    const attached=State.droppedFile;
+    const problem=attached?attachmentProblem(attached,State.settings.chatProvider):null;
+    if(problem){fileFeedback.textContent=u(problem);fileFeedback.hidden=false;return;}
     Speech.stop();
     if (picker.isOpen) picker.close();
     input.value = "";
     sending = true;
+    history.open=false;quotaRequest++;quota.hidden=true;
+    const started=Date.now();
+    const taskProvider=State.settings.chatProvider;
+    let taskModel=activeModel(State.settings);
+    let taskAnswer="",taskFailed=true;
     drawModelButton();
     Sound.play("send");
 
@@ -306,19 +361,25 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
 
     const file = State.droppedFile;
     const context: ChatContext | null =
-      State.chatHistory.length === 1 && file ? { kind: "file", name: file.name, path: file.path } : null;
+      !State.chatHistory.some(m=>m.role==="assistant") && file ? { kind: "file", name: file.name, path: file.path } : null;
 
     try {
       let selected: string | undefined;
       if (State.settings.chatAutoModel) {
         const provider = State.settings.chatProvider;
-        const models = await Bridge.chatModels(provider);
+        let models = await Bridge.chatModels(provider);
+        if (provider === "openrouter" && isFreeRouterModel(activeModel(State.settings))) {
+          models = models.filter(model=>isFreeRouterModel(model.id));
+          if (!models.length) throw new Error(u("OpenRouter: нет доступных бесплатных моделей. Попробуйте позже или выберите модель вручную."));
+        }
         const image = !!context && context.kind === "file" && /\.(png|jpe?g|webp|gif)$/i.test(context.name);
         const choice = chooseAutoModel(models, activeModel(State.settings), query, image);
         selected = choice.model;
+        taskModel=selected;
         routing.textContent = `${providerDef(provider).name} · ${selected} — ${choice.reason}. Стоимость определяется провайдером.`;
       } else routing.textContent = `${providerDef(State.settings.chatProvider).name} · ${activeModel(State.settings)}`;
       const reply = await Bridge.chatSend(query, context, selected);
+      taskAnswer=reply.text;taskFailed=false;
       State.chatHistory.push({ id: nextId++, role: "assistant", content: reply.text, modelLabel: routing.textContent ?? undefined });
       State.stateOverride = null;
       Sound.play("finish");
@@ -328,6 +389,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
       State.view = "note";
       Sound.play("error");
     } finally {
+      if(!saveTask({id:`${started}-${nextId}`,query,answer:taskAnswer,provider:taskProvider,model:taskModel,at:started,duration:Date.now()-started,context:!!context,failed:taskFailed}))routing.textContent=u("Не удалось сохранить задачу на устройстве.");
       sending = false;
       live = null;
       renderedCount = -1; // the finished answer replaces the streamed one
@@ -335,6 +397,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
       State.notify();
       onHeightChange();
       input.focus();
+      void refreshQuota(taskProvider,taskModel);
     }
   }
 
@@ -354,6 +417,7 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
   return {
     el,
     sync() {
+      if(State.view!=="prompt" || State.settings.chatProvider!==quota.dataset.provider)quota.hidden=true;
       readReply.disabled = sending || !State.chatHistory.some(message => message.role === "assistant");
       stopSpeech.disabled = !State.novaSpeaking;
       if ((State.view !== "prompt" || State.mode !== "expanded") && State.novaSpeaking) Speech.stop();
@@ -362,11 +426,24 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
         State.novaDraft = null;
       }
       const file = State.droppedFile;
-      const wantChip = file?.name ?? "";
+      attach.disabled=sending || State.filePreparing;
+      attach.textContent=State.filePreparing?u("Готовим файл…"):u("Прикрепить файл");
+      attach.title=u("Выбор файла начнёт новый чат. Сам файл отправится только вместе с вашим сообщением.");
+      fileDestination.textContent=u("Файл получит {name} после нажатия «Отправить».",{name:providerDef(State.settings.chatProvider).name});
+      const sent=State.chatHistory.some(m=>m.role==="assistant");
+      const wantChip = `${file?.path ?? ""}|${sent}|${sending}|${State.filePreparing}`;
       if (chipRow.dataset.label !== wantChip) {
         chipRow.dataset.label = wantChip;
         clear(chipRow);
-        if (wantChip) chipRow.append(contextChip(wantChip));
+        if (file) {
+          chipRow.append(contextChip(file.name),h("small",{text:sent?u("Файл уже в контексте чата"):u("Отправится с сообщением")}));
+          chipRow.append(h("button",{type:"button",text:sent?u("Новый чат без файла"):u("Убрать файл"),disabled:sending || State.filePreparing,onclick:async()=>{
+            try{
+              if(sent){await Bridge.chatResetChecked();State.chatHistory=[];renderedCount=-1;}
+              State.droppedFile=null;State.promptContext=null;fileFeedback.hidden=true;State.notify();onHeightChange();
+            }catch{showNotice(u("Не удалось очистить контекст. Повторите попытку."));}
+          }}));
+        }
       }
 
       const thinking = State.stateOverride === "thinking";
@@ -384,11 +461,13 @@ export function buildPrompt(onHeightChange: () => void): ViewHost {
       drawModelButton();
 
       input.placeholder = t(State.chatHistory.length === 0 ? STRINGS.placeholderFirst : STRINGS.placeholderNext);
-      input.disabled = sending;
+      input.disabled = sending || State.filePreparing;
+      send.disabled = sending || State.filePreparing;
     },
     focus() {
       input.focus();
       input.select();
+      if(!sending)void refreshQuota(State.settings.chatProvider,activeModel(State.settings));
     },
   };
 }

@@ -6,13 +6,13 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 h1 { font-size: 22px; } h2 { margin: 0 0 10px; font-size: 15px; }
 p { line-height: 1.5; } .muted { color: #b6aabd; font-size: 12px; }
 button, input, textarea { font: inherit; } button { cursor: pointer; background: #30283d; color: #f7f0e8; border: 1px solid #ffffff18; border-radius: 9px; padding: 10px 13px; font-size: 13px; }
-button:hover { background: #40324e; } button:disabled { cursor: default; opacity: .45; } button.primary { background: #f4b38a; color: #100f16; } button.danger { color: #f1a8ad; } button.stop { border-color: #e5a6ac88; }
-button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #ffcca8; outline-offset: 3px; }
+button:hover { background: #40324e; } button:disabled { cursor: default; opacity: .45; } button.primary { background: #b39ddb; color: #100f16; } button.danger { color: #f1a8ad; } button.stop { border-color: #e5a6ac88; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #cbb9eb; outline-offset: 3px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; } .notice { margin: 12px 28px; color: #f0ce97; font-size: 13px; min-height: 20px; }
 .notes-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; padding: 0 28px 28px; }
-.note-list { display: flex; flex-direction: column; align-items: stretch; gap: 8px; max-height: calc(100vh - 150px); overflow: auto; } .note-list button { text-align: left; overflow-wrap: anywhere; } .note-list .selected { background: #40324e; border-color: #f4b38a80; }
+.note-list { display: flex; flex-direction: column; align-items: stretch; gap: 8px; max-height: calc(100vh - 150px); overflow: auto; } .note-list button { text-align: left; overflow-wrap: anywhere; } .note-list .selected { background: #40324e; border-color: #b39ddb80; }
 .editor { display: flex; flex-direction: column; gap: 12px; min-width: 0; } input:not([type=checkbox]), textarea { width: 100%; border: 1px solid #ffffff20; border-radius: 9px; background: #1b1824; color: #f7f0e8; padding: 12px; } textarea { resize: vertical; line-height: 1.6; } .transcript { min-height: 230px; }
 .recording { background: #1b1824; border: 1px solid #ffffff12; border-radius: 12px; padding: 16px; } .recording .actions { margin-top: 12px; } .consent { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .dictionary { margin: 0 auto 32px; padding: 0 28px; max-width: 760px; display: flex; flex-direction: column; gap: 16px; } .dictionary label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; } pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.6; }
-.cloud-confirm:not(:empty), .summary:not(:empty), .preview:not(:empty) { padding: 16px; border-radius: 12px; background: #1b1824; border: 1px solid #f4b38a40; } .cloud-confirm button { margin: 6px 8px 0 0; }
+.cloud-confirm:not(:empty), .summary:not(:empty), .preview:not(:empty) { padding: 16px; border-radius: 12px; background: #1b1824; border: 1px solid #b39ddb40; } .cloud-confirm button { margin: 6px 8px 0 0; }
 @media(max-width:760px) { header { align-items: flex-start; flex-direction: column; padding: 18px; gap: 8px; } .notes-layout { grid-template-columns: 1fr; padding: 0 18px 24px; } .note-list { flex-direction: row; max-height: 100px; } .note-list button { min-width: 150px; } }

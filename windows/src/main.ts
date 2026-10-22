@@ -1,7 +1,9 @@
+import { initTools } from "./nova/productivity/store";
 // Entry point: boot the bridge, wire the island, start the greeting.
 
 import "./style.css";
 import "./nova/nova.css";
+import "./ui/product.css";
 import { loadCharacter, loadExtraCharacters } from "./nova/character/sprites";
 import { readPreviewSettings } from "./nova/preview";
 import { Speech } from "./nova/voice/speech";
@@ -36,6 +38,15 @@ async function main() {
   await loadCharacter().catch((err: unknown) => console.error(err));
   await loadExtraCharacters();
 
+  // Upstream #346: correct WebView2 DPI before sizing the canvas bitmaps.
+  const dprBefore = window.devicePixelRatio || 1;
+  const zoomChanged = await Bridge.fitZoom(dprBefore);
+  if (zoomChanged) {
+    for (let i = 0; i < 20 && window.devicePixelRatio === dprBefore; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+  }
+
   const island = new Island(root);
 
   const boot = await Bridge.boot();
@@ -58,7 +69,7 @@ async function main() {
   window.addEventListener("storage", event => {
     if (!IS_TAURI && event.key === "nova.preview.preferences.v1") {
       State.settings = { ...State.settings, ...readPreviewSettings() };
-      island.applySettings(); State.notify();
+      applyLanguage(); island.applySettings(); State.notify();
     }
   });
   if (boot && !boot.cursorPoll) island.followPageCursor();
@@ -105,7 +116,28 @@ async function main() {
     }
   });
 
-  await onEvent<null>("screen-changed", () => void Bridge.reposition());
+  const checkZoom = async () => {
+    await Bridge.fitZoom(window.devicePixelRatio || 1);
+  };
+  await onEvent<null>("screen-changed", async () => {
+    await checkZoom();
+    void Bridge.reposition();
+  });
+  // Re-arm after each DPI change: the previous resolution only matches once.
+  const watchResolution = () => {
+    const query = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    query.addEventListener?.("change", () => {
+      void checkZoom();
+      watchResolution();
+    }, { once: true });
+  };
+  watchResolution();
+  window.addEventListener("wheel", (event) => {
+    if (event.ctrlKey) event.preventDefault();
+  }, { passive: false });
+  window.addEventListener("keydown", (event) => {
+    if (event.ctrlKey && ["+", "-", "=", "0"].includes(event.key)) event.preventDefault();
+  });
 
   // Settings → Reload sounds: read the sounds folder again, and let them hear it.
   await onEvent<null>("sounds-changed", () => {
@@ -127,6 +159,12 @@ async function main() {
   registerHookHandlers(island);
   registerPhoneLink(island);
   registerIntegrationHandlers(island);
+  initTools();
+  window.addEventListener("keydown", event => {
+    if (!(event.ctrlKey || event.metaKey) || !event.shiftKey || event.key.toLowerCase() !== "k" || event.altKey) return;
+    event.preventDefault(); event.stopImmediatePropagation();
+    island.setView("quick");
+  }, true);
   registerShortcutHandlers(island, () => setPaused(false));
   registerSpotifyHandlers(island);
   // Rust may have read Spotify before this page listened: ask once.

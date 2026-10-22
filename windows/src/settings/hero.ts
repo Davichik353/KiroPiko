@@ -1,3 +1,4 @@
+import { COMPANION_COLORS, KIRO_ACCENT, KIRO_SUCCESS } from "../nova/palette";
 import { emitTo } from "@tauri-apps/api/event";
 import { h } from "../views/dom";
 import { IS_TAURI, onEvent } from "../core/bridge";
@@ -60,7 +61,7 @@ export function settingsHero(read: () => Settings) {
       if (existing) { existing.member = member; existing.bot.setState(member.state); existing.button.setAttribute("aria-label", `Поздороваться: ${member.name}`); return existing; }
       const canvas = h("canvas", {width:160,height:160,"aria-hidden":"true"}) as HTMLCanvasElement;
       const button = h("button", {class:"kiro-hero-walker",type:"button","aria-label":`Поздороваться: ${member.name}`,title:member.name},canvas) as HTMLButtonElement;
-      const colors = [[.957,.702,.541],[.72,.64,.84],[.91,.62,.65],[.60,.52,.70],[.94,.84,.68]] as const;
+      const colors = COMPANION_COLORS;
       const bot=new BotEngine();bot.isMini=true;bot.bodyColor=colors[i%colors.length];bot.setState(member.state);
       const w:Walker = {member,bot,button,ctx:canvas.getContext("2d"),x:(i+1)/(next.length+1),target:i%2?.1:.9,rest:seconds()+i*.25,jump:-Infinity,direction:1};
       button.addEventListener("click", () => { w.jump=seconds();w.rest=seconds()+1.5;if(!still())w.bot.triggerEmote("love");say(w.member.name,"Привет! Я здесь.","",true);draw(performance.now()); });
@@ -91,7 +92,7 @@ export function settingsHero(read: () => Settings) {
     if (!ready || disposed || !visible || document.hidden) return;
     const now=ms/1000, reduced=still(), dt=Math.min(.05,Math.max(0,(ms-last)/1000));last=ms;
     const lead=snapshot.members[0], state=lead?.state??"idle";
-    const color=["error","ratelimit"].includes(state)?"#ed8996":["approval","question"].includes(state)?"#f4c97d":state==="finished"?"#c2d9ad":"#f4b38a";
+    const color=["error","ratelimit"].includes(state)?"#ed8996":["approval","question"].includes(state)?"#f4c97d":state==="finished"?KIRO_SUCCESS:KIRO_ACCENT;
     card.style.setProperty("--hero-tone",color);
     const title=heroStateText(state);if(headline.textContent!==title)headline.textContent=title;
     const detail=read().novaDoNotDisturb||snapshot.quiet?"Тихо посижу рядом. Не отвлекаю.":lead?`${lead.name} · ${snapshot.members.length} в сцене`:"Пока тихо. Устраивайся поудобнее.";
